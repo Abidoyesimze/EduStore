@@ -4,8 +4,8 @@ pragma solidity ^0.8.28;
 import "./EduStore.sol";
 
 /**
- * @title EduAccessControl
- * @dev Contract for managing access control to educational content
+ * EduAccessControl
+ *  Contract for managing access control to educational content
  */
 contract EduAccessControl {
     // ============ Structs ============
@@ -120,7 +120,7 @@ contract EduAccessControl {
     }
 
     /**
-     * @dev Record content access (for audit purposes)
+     *  Record content access (for audit purposes)
      * @param _contentId IPFS CID of the content being accessed
      */
     function accessContent(string memory _contentId) external hasAccess(_contentId) {
@@ -128,15 +128,15 @@ contract EduAccessControl {
     }
 
     /**
-     * @dev Get all content the caller has access to
-     * @return Array of content IDs accessible to the caller
+     *  Get all content the caller has access to
+     * return Array of content IDs accessible to the caller
      */
     function getAccessibleContent() external view returns (string[] memory) {
         return userAccessible[msg.sender];
     }
 
     /**
-     * @dev Check if a user has valid permission for a content
+     *  Check if a user has valid permission for a content
      * @param _contentId IPFS CID of the content
      * @param _user Address of the user
      * @return bool indicating whether the user has valid permission
@@ -152,7 +152,7 @@ contract EduAccessControl {
     }
 
     /**
-     * @dev Check if a user has access to content
+     *  Check if a user has access to content
      * @param _contentId IPFS CID of the content
      * @param _user Address of the user
      * @return True if user has access
@@ -166,7 +166,7 @@ contract EduAccessControl {
     }
 
     /**
-     * @dev Remove existing access permission
+     *  Remove existing access permission
      * @param _contentId IPFS CID of the content
      * @param _user Address of the user
      */

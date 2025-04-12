@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 /**
  * @title EduStoreCore
- * @dev Core contract for the educational content registry
+ *  Core contract for the educational content registry
  */
 contract EduStoreCore {
     // ============ Structs ============
@@ -65,7 +65,7 @@ contract EduStoreCore {
     // ============ Content Management Functions ============
 
     /**
-     * @dev Store educational content after it has been uploaded to IPFS
+     *  Store educational content after it has been uploaded to IPFS
      * @param _contentId IPFS CID of the already uploaded content
      * @param _title Title of the content
      * @param _description Description of the content
@@ -101,7 +101,7 @@ contract EduStoreCore {
     }
 
     /**
-     * @dev Update content metadata
+     *  Update content metadata
      * @param _contentId IPFS CID of the content
      * @param _title New title for the content
      * @param _description New description for the content
@@ -127,7 +127,7 @@ contract EduStoreCore {
     }
 
     /**
-     * @dev Get all content owned by the caller
+     *  Get all content owned by the caller
      * @return Array of content IDs owned by the caller
      */
     function getMyContent() external view returns (string[] memory) {
@@ -135,7 +135,7 @@ contract EduStoreCore {
     }
 
     
-    //  * @dev Get details about specific content
+    //  *  Get details about specific content
     //  * @param _contentId IPFS CID of the content
     //  * @return Content details
      
@@ -161,7 +161,7 @@ contract EduStoreCore {
     }
 
     /**
-     * @dev Check if the caller is the owner of a content
+     *  Check if the caller is the owner of a content
      * @param _contentId IPFS CID of the content
      * @return True if caller is owner
      */
@@ -170,7 +170,7 @@ contract EduStoreCore {
     }
 
     /**
-     * @dev Check if content is public
+     *  Check if content is public
      * @param _contentId IPFS CID of the content
      * @return True if content is public
      */
@@ -179,7 +179,7 @@ contract EduStoreCore {
     }
 
     /**
-     * @dev Update the storage expiry time for content (called by storage contract)
+     *  Update the storage expiry time for content (called by storage contract)
      * @param _contentId IPFS CID of the content
      * @param _expiryTime New expiry timestamp
      */
@@ -189,7 +189,7 @@ contract EduStoreCore {
     }
 
     /**
-     * @dev Transfer admin rights to a new address
+     *  Transfer admin rights to a new address
      * @param _newAdmin Address of the new admin
      */
     function transferAdmin(address _newAdmin) external onlyAdmin {

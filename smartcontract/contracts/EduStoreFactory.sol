@@ -7,7 +7,7 @@ import "./EduAccessControl.sol";
 
 /**
  * @title EduStoreFactory
- * @dev Factory contract to deploy and connect the modular EduStore system
+ *  Factory contract to deploy and connect the modular EduStore system
  */
 contract EduStoreFactory {
     // Deployed contract addresses
@@ -27,7 +27,7 @@ contract EduStoreFactory {
     );
     
     /**
-     * @dev Constructor initializes the factory
+     *  Constructor initializes the factory
      */
     constructor() {
         admin = msg.sender;
