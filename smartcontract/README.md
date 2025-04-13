@@ -1,191 +1,130 @@
-Content Management Functions
-storeContent
-solidityfunction storeContent(
-    string memory _contentId,
-    string memory _title,
-    string memory _description,
-    string memory _contentType,
-    bool _isPublic
-) external
+EduStore: Decentralized Educational Storage Platform
+EduStore is a decentralized application built on Filecoin that provides secure, accessible storage for educational content. The platform leverages IPFS for content-addressed storage and Filecoin for persistent, incentivized storage.
+Contract Architecture
+The system consists of three main contracts that work together to provide a complete educational content management solution:
+1. EduStoreCore (0xf51F26Be5eDF0Fdc168FE9618F85670B84E0eEbD)
+The central contract that handles content registration and metadata management.
+Key Features:
 
-Purpose: Registers educational content on the blockchain after it's been uploaded to IPFS
-Parameters:
+Content registration with metadata (title, description, type)
+Content ownership management
+Content retrieval and viewing
+Public/private content visibility settings
 
-_contentId: The IPFS Content ID (CID) generated when the file is uploaded
-_title: User-provided title for the content
-_description: User-provided description
-_contentType: Type of content (e.g., "video", "document", "presentation")
-_isPublic: Whether anyone can access this content without explicit permission
+Main Functions:
 
+storeContent(): Register new educational content
+updateContent(): Modify content metadata
+getMyContent(): Retrieve all content owned by a user
+getContentDetails(): Get information about specific content
 
-How it works: Your frontend application would handle the actual file upload to IPFS, get the CID, then call this function to register ownership and metadata on the blockchain
+2. EduStorageManager (0xD625F0A89263D8C9cE35EBC733AB1908486F882f)
+Manages storage deals with Filecoin storage providers.
+Key Features:
 
-updateContent
-solidityfunction updateContent(
-    string memory _contentId,
-    string memory _title,
-    string memory _description,
-    bool _isPublic
-) external
+Automated storage deal creation with Filecoin miners
+Payment distribution between providers and platform
+Storage deal extension functionality
+Platform fee management
 
-Purpose: Updates the metadata of previously stored content
-Parameters: Similar to storeContent but for changing existing information
-Restrictions: Only the content owner can update content (enforced by the onlyContentOwner modifier)
+Main Functions:
 
-Storage Deal Functions
-storeContentWithDeal
-solidityfunction storeContentWithDeal(
-    string memory _contentId,
-    address[] memory _providers,
-    uint256 _duration
-) external payable
+storeContentWithDeal(): Create a storage deal for content
+extendStorage(): Extend the duration of a storage deal
+getStorageDealForContent(): Check active storage deals for content
+updatePlatformFee(): Adjust the platform fee percentage (admin only)
 
-Purpose: Creates a storage deal with a Filecoin provider to ensure content persistence
-Parameters:
+3. EduAccessControl (0xee45F988e46aa569c1BB2F0a1f7b1A786075ec00)
+Handles content access permissions and sharing.
+Key Features:
 
-_contentId: The IPFS CID of the content to store
-_providers: List of Filecoin storage provider addresses (your frontend would supply these)
-_duration: How many days to store the content
+Time-limited content sharing
+Access control for private content
+Access tracking for analytics
+User-friendly permission management
 
+Main Functions:
 
-Payment: Requires FIL tokens (sent as value with the transaction) to pay providers
-How it works: Selects a provider from the list, creates a deal, sends payment, and updates storage expiry
+shareContent(): Grant content access to another user
+stopSharing(): Revoke access permissions
+accessContent(): Record content access (for analytics)
+getAccessibleContent(): List all content a user can access
+checkAccess(): Verify if a user has access to content
 
-extendStorage
-solidityfunction extendStorage(
-    string memory _contentId,
-    uint256 _additionalDays
-) external payable
+How It Works
 
-Purpose: Extends the duration of an existing storage deal
-Parameters:
+Content Upload:
 
-_contentId: The IPFS CID of the content
-_additionalDays: How many more days to store the content
+User uploads content to IPFS through the application
+IPFS returns a unique Content ID (CID)
+The CID is registered in EduStoreCore with metadata
 
 
-Payment: Requires additional FIL tokens for the extended period
-How it works: Finds the active deal for this content, extends the end date, and distributes payment
+Storage Deal Creation:
 
-Access Control Functions
-shareContent
-solidityfunction shareContent(
-    string memory _contentId,
-    address _user,
-    uint256 _daysValid
-) external
-
-Purpose: Grants another user access to your content
-Parameters:
-
-_contentId: The IPFS CID of the content to share
-_user: Blockchain address of the user to share with
-_daysValid: How many days the access permission remains valid
+User selects storage duration and pays in FIL
+EduStorageManager creates a storage deal with a Filecoin provider
+Platform fee is sent to admin, remainder to the provider
 
 
-How it works: Creates an access permission record with an expiry date and adds the content to the recipient's accessible content list
+Content Sharing:
 
-stopSharing
-solidityfunction stopSharing(
-    string memory _contentId,
-    address _user
-) external
-
-Purpose: Revokes another user's access to your content
-Parameters:
-
-_contentId: The IPFS CID of the content
-_user: Address of the user whose access is being revoked
+Owner can share content with specific users
+EduAccessControl manages permissions and access
+Access can be time-limited and revoked at any time
 
 
-How it works: Removes permission records and updates the user's accessible content list
+Content Retrieval:
 
-accessContent
-solidityfunction accessContent(
-    string memory _contentId
-) external
-
-Purpose: Records when a user accesses content (for audit and analytics)
-Parameters:
-
-_contentId: The IPFS CID of the content being accessed
+Users can access content they own or have permission for
+Content is retrieved from IPFS using the CID
+Access events are recorded for analytics
 
 
-Restrictions: Only works if the user has valid access (enforced by the hasAccess modifier)
-How it works: Emits an event that could be monitored by your application for analytics
 
-User Content Management Functions
-getMyContent
-solidityfunction getMyContent() external view returns (string[] memory)
+Contract Deployment
+The contracts are deployed on the Filecoin Calibration Network at the following addresses:
 
-Purpose: Returns all content IDs owned by the calling user
-Returns: Array of IPFS CIDs representing all content the user has uploaded
-How it works: Simply returns the array from the userContent mapping for the caller's address
+EduStoreCore: 0xf51F26Be5eDF0Fdc168FE9618F85670B84E0eEbD
+EduStorageManager: 0xD625F0A89263D8C9cE35EBC733AB1908486F882f
+EduAccessControl: 0xee45F988e46aa569c1BB2F0a1f7b1A786075ec00
 
-getAccessibleContent
-solidityfunction getAccessibleContent() external view returns (string[] memory)
+Usage Examples
+Storing Content
+typescript// Connect to the EduStoreCore contract
+const coreContract = await ethers.getContractAt("EduStoreCore", "0xf51F26Be5eDF0Fdc168FE9618F85670B84E0eEbD");
 
-Purpose: Returns all content IDs the calling user has access to (shared by others)
-Returns: Array of IPFS CIDs representing all shared content the user can access
-How it works: Returns the array from the userAccessible mapping for the caller's address
+// Store content (after uploading to IPFS)
+await coreContract.storeContent(
+  "QmZ9...", // IPFS Content ID
+  "Introduction to Blockchain",
+  "A comprehensive guide to blockchain technology",
+  "document",
+  true // isPublic
+);
+Creating a Storage Deal
+typescript// Connect to the EduStorageManager contract
+const storageContract = await ethers.getContractAt("EduStorageManager", "0xD625F0A89263D8C9cE35EBC733AB1908486F882f");
 
-getContentDetails
-solidityfunction getContentDetails(
-    string memory _contentId
-) external view returns (...)
+// Create a storage deal
+await storageContract.storeContentWithDeal(
+  "QmZ9...", // IPFS Content ID
+  ["0x123..."], // Provider addresses
+  30, // Storage duration in days
+  { value: ethers.utils.parseEther("1.0") } // Payment in FIL
+);
+Sharing Content
+typescript// Connect to the EduAccessControl contract
+const accessContract = await ethers.getContractAt("EduAccessControl", "0xee45F988e46aa569c1BB2F0a1f7b1A786075ec00");
 
-Purpose: Retrieves complete details about a specific piece of content
-Parameters:
-
-_contentId: The IPFS CID of the content
-
-
-Returns: All metadata associated with the content (title, description, type, owner, etc.)
-Restrictions: Only works if the user has access to the content
-How it works: Retrieves the content record from storage and returns its fields
-
-Admin Functions
-updatePlatformFee
-solidityfunction updatePlatformFee(uint256 _newFee) external
-
-Purpose: Updates the platform fee percentage
-Parameters:
-
-_newFee: New fee percentage in basis points (e.g., 100 = 1%)
-
-
-Restrictions: Only callable by the admin address
-How it works: Updates the fee percentage used when calculating payment splits
-
-transferAdmin
-solidityfunction transferAdmin(address _newAdmin) external
-
-Purpose: Transfers admin rights to a new address
-Parameters:
-
-_newAdmin: Address of the new admin
+// Share content with another user
+await accessContract.shareContent(
+  "QmZ9...", // IPFS Content ID
+  "0xabc...", // User address
+  7 // Access duration in days
+);
+Development and Testing
+Prerequisites
 
 
-Restrictions: Only callable by the current admin
-How it works: Updates the admin address in storage
 
-Internal Helper Functions
-_userHasAccess
-
-Checks if a user has valid permission for a content item
-Used by the hasAccess modifier to enforce access control
-
-_removeExistingAccess
-
-Removes an existing access permission from a content's permission list
-Used by both shareContent (to replace existing permissions) and stopSharing
-
-_findActiveDealForContent
-
-Searches for an active storage deal for a specific content item
-Used by extendStorage to identify which deal to extend
-
-_selectProvider
-
-Selects a valid provider from a list of provider addresses
-Used by storeContentWithDeal to choose which provider to create a deal with
