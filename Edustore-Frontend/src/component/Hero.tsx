@@ -63,7 +63,7 @@ const HomePage = () => {
               <img 
                 src={cap} 
                 alt="Graduation Cap" 
-                className="w-8 h-8"
+                className="w-15 h-11"
               />
             </div>
             
