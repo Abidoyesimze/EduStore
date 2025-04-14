@@ -50,7 +50,7 @@ const HomePage = () => {
             />
             
             {/* Filecoin Logo */}
-            <div className="absolute z-20 top-[15%] right-[20%] animate-pulse">
+            <div className="absolute z-[20px] left-90  animate-pulse">
               <img 
                 src={filecoin} 
                 alt="Filecoin Logo" 
@@ -59,11 +59,11 @@ const HomePage = () => {
             </div>
             
             {/* Graduation Cap */}
-            <div className="absolute z-20 bottom-[30%] left-[25%] animate-bounce">
+            <div className="absolute z-20 bottom-[2%] left-[25%] animate-bounce ">
               <img 
                 src={cap} 
                 alt="Graduation Cap" 
-                className="w-8 h-8"
+                className="w-18"
               />
             </div>
             
