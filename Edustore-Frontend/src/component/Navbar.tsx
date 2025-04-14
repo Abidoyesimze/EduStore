@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import { CustomButton } from './Button/CustomConnectButton';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+ 
 
   return (
     <nav className="bg-[#F8FAF5] py-6 px-6">
@@ -37,9 +39,10 @@ const Navbar = () => {
 
             {/* Connect Wallet Button */}
             <div className="hidden md:block">
-              <button className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+              {/* <button className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
                 Connect Wallet
-              </button>
+              </button> */}
+              <CustomButton />
             </div>
 
             {/* Mobile Menu Button */}
@@ -75,9 +78,7 @@ const Navbar = () => {
                 <Link to="/contact" className="text-gray-600 hover:text-green-500 transition-colors">
                   Contact
                 </Link>
-                <button className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors w-full">
-                  Connect Wallet
-                </button>
+                <CustomButton />
               </div>
             </div>
           )}
