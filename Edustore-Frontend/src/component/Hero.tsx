@@ -1,8 +1,12 @@
 import globe from "../assets/3d.png";
 import cap from "../assets/cap.png";
 import filecoin from "../assets/filecoin.png";
+import {useNavigate} from "react-router-dom";
 
 const HomePage = () => {
+
+  const navigate = useNavigate();
+
   return (
     <div className="bg-[#F8FAF5]">
       {/* Hero Section */}
@@ -19,10 +23,10 @@ const HomePage = () => {
               access materials anytime, anywhere.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <button className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors">
+              <button className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors" onClick={() => navigate('/roles')}>
                 Launch MVP
               </button>
-              <button className="bg-white text-black px-6 py-3 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors">
+              <button className="bg-white text-black px-6 py-3 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors" onClick={() => navigate('/features')}>
                 Explore Features
               </button>
             </div>
@@ -48,24 +52,26 @@ const HomePage = () => {
               alt="3D Earth with educational resources" 
               className="w-full max-w-md relative z-10"
             />
+
+            {/* Graduation Cap */}
+            <div className="absolute z-20 top-[5%] left-[50%] transform -translate-x-1/2 animate-bounce">
+              <img 
+              src={cap} 
+              alt="Graduation Cap" 
+              className="w-18"
+              />
+            </div>
             
             {/* Filecoin Logo */}
-            <div className="absolute z-[20px] left-90  animate-pulse">
+            <div className="absolute z-20 bottom-[5%] left-[50%] transform -translate-x-1/2 animate-pulse">
               <img 
-                src={filecoin} 
-                alt="Filecoin Logo" 
-                className="w-18 h-11"
+              src={filecoin} 
+              alt="Filecoin Logo" 
+              className="w-18 h-11"
               />
             </div>
             
-            {/* Graduation Cap */}
-            <div className="absolute z-20 bottom-[2%] left-[25%] animate-bounce ">
-              <img 
-                src={cap} 
-                alt="Graduation Cap" 
-                className="w-18"
-              />
-            </div>
+            
             
             {/* Curved Arrow */}
             <div className="absolute left-0 top-1/4 w-full h-full z-0">

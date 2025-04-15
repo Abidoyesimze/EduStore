@@ -3,9 +3,13 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './component/Navbar';
 import HomePage from './component/HomePage';
 import Footer from './component/Footer';
-import Features from './component/features';
+import Features from './component/Features';
 import '@rainbow-me/rainbowkit/styles.css';
 import RoleSelectionPage from './component/RoleSelectionPage';
+import EducatorDashboard from './component/dashboard/EducatorDashboard';
+import UploadFile from './component/dashboard/UploadFile';
+import MyFiles from './component/dashboard/MyFiles';
+import AccessControl from './component/dashboard/AccessControl';
 import {
   getDefaultConfig,
   RainbowKitProvider,
@@ -46,6 +50,10 @@ function App() {
              <Route path="/" element={<HomePage />} />
              <Route path='/features' element={<Features />} />
              <Route path="/roles" element={<RoleSelectionPage />} />
+              <Route path="/Educator-dashboard" element={<EducatorDashboard />} />
+              <Route path="/upload" element={<UploadFile />} />
+              <Route path="/files" element={<MyFiles />} />
+              <Route path="/access" element={<AccessControl />} />
           </Routes>
           </main>
           <Footer />
