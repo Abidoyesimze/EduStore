@@ -1,183 +1,92 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.20;
 
-import "./EduStore.sol";
+interface IEduStore {
+    function isContentPublic(string memory _contentId) external view returns (bool);
+    function isContentOwner(string memory _contentId, address _user) external view returns (bool);
+}
 
-/**
- * EduAccessControl
- *  Contract for managing access control to educational content
- */
 contract EduAccessControl {
-    // ============ Structs ============
-
-    struct AccessPermission {
-        string contentId;        // IPFS CID of the content
-        address user;            // Address of the user granted access
-        uint256 expiryDate;      // When the access permission expires
+    // Simple permission struct
+    struct Permission {
+        address user;
+        uint256 expiry;
     }
 
-    // ============ Events ============
+    // Events
+    event AccessGranted(string contentId, address user, uint256 expiry);
+    event AccessRevoked(string contentId, address user);
 
-    event AccessGranted(
-        string contentId,
-        address owner,
-        address user,
-        uint256 expiryDate
-    );
+    // State variables
+    IEduStore public eduStore;
+    mapping(string => mapping(address => uint256)) public permissions; // contentId => user => expiry
+    mapping(address => string[]) public userAccess;
 
-    event ContentAccessed(
-        string contentId,
-        address user,
-        uint256 timestamp
-    );
-
-    // ============ State Variables ============
-
-    // Reference to the core contract
-    EduStoreCore public coreContract;
-    
-    // Mapping from content ID to array of permitted users
-    mapping(string => AccessPermission[]) public contentAccess;
-    
-    // Mapping from user address to array of content IDs they have access to
-    mapping(address => string[]) public userAccessible;
-
-    // ============ Constructor ============
-
-    constructor(address _coreContract) {
-        coreContract = EduStoreCore(_coreContract);
+    constructor(address _eduStoreAddress) {
+        eduStore = IEduStore(_eduStoreAddress);
     }
 
-    // ============ Modifiers ============
-
-    modifier onlyContentOwner(string memory _contentId) {
-        require(coreContract.isContentOwner(_contentId, msg.sender), "Only content owner can call this");
-        _;
-    }
-
-    modifier hasAccess(string memory _contentId) {
+    modifier onlyOwner(string memory _contentId) {
         require(
-            coreContract.isContentPublic(_contentId) || 
-            coreContract.isContentOwner(_contentId, msg.sender) || 
-            _userHasAccess(_contentId, msg.sender),
-            "Access denied"
+            eduStore.isContentOwner(_contentId, msg.sender), 
+            "Not owner"
         );
         _;
     }
 
-    // ============ Access Control Functions ============
-
-    /**
-     * @dev Share content with another user
-     * @param _contentId IPFS CID of the content
-     * @param _user Address of the user to grant access
-     * @param _daysValid Number of days the access will be valid
-     */
-    function shareContent(
+    function grantAccess(
         string memory _contentId,
         address _user,
-        uint256 _daysValid
-    ) external onlyContentOwner(_contentId) {
-        require(_user != address(0), "Invalid user address");
-        require(_daysValid > 0, "Duration must be greater than zero");
+        uint256 _days
+    ) external onlyOwner(_contentId) {
+        require(_user != address(0), "Invalid user");
+        require(_days > 0, "Invalid duration");
 
-        uint256 expiryDate = block.timestamp + (_daysValid * 1 days);
-
-        AccessPermission memory newAccess = AccessPermission({
-            contentId: _contentId,
-            user: _user,
-            expiryDate: expiryDate
-        });
-
-        // Remove existing permission if any
-        _removeExistingAccess(_contentId, _user);
+        uint256 expiry = block.timestamp + (_days * 1 days);
         
-        // Add new permission
-        contentAccess[_contentId].push(newAccess);
-        userAccessible[_user].push(_contentId);
-
-        emit AccessGranted(_contentId, msg.sender, _user, expiryDate);
+        // If this is a new access grant, add to user's list
+        if (permissions[_contentId][_user] == 0) {
+            userAccess[_user].push(_contentId);
+        }
+        
+        // Set permission
+        permissions[_contentId][_user] = expiry;
+        
+        emit AccessGranted(_contentId, _user, expiry);
     }
 
-    /**
-     * @dev Stop sharing content with a user
-     * @param _contentId IPFS CID of the content
-     * @param _user Address of the user to revoke access from
-     */
-    function stopSharing(string memory _contentId, address _user) external onlyContentOwner(_contentId) {
-        _removeExistingAccess(_contentId, _user);
-        
-        // Remove from user's accessible content list
-        string[] storage userContents = userAccessible[_user];
-        for (uint256 i = 0; i < userContents.length; i++) {
-            if (keccak256(bytes(userContents[i])) == keccak256(bytes(_contentId))) {
-                // Replace with the last element and remove the last
-                userContents[i] = userContents[userContents.length - 1];
-                userContents.pop();
-                break;
+    function revokeAccess(
+        string memory _contentId, 
+        address _user
+    ) external onlyOwner(_contentId) {
+        if (permissions[_contentId][_user] > 0) {
+            // Remove permission
+            permissions[_contentId][_user] = 0;
+            
+            // Remove from user's access list
+            string[] storage userItems = userAccess[_user];
+            for (uint i = 0; i < userItems.length; i++) {
+                if (keccak256(bytes(userItems[i])) == keccak256(bytes(_contentId))) {
+                    // Move last item to this position and pop
+                    userItems[i] = userItems[userItems.length - 1];
+                    userItems.pop();
+                    break;
+                }
             }
+            
+            emit AccessRevoked(_contentId, _user);
         }
     }
 
-    /**
-     *  Record content access (for audit purposes)
-     * @param _contentId IPFS CID of the content being accessed
-     */
-    function accessContent(string memory _contentId) external hasAccess(_contentId) {
-        emit ContentAccessed(_contentId, msg.sender, block.timestamp);
-    }
-
-    /**
-     *  Get all content the caller has access to
-     * return Array of content IDs accessible to the caller
-     */
-    function getAccessibleContent() external view returns (string[] memory) {
-        return userAccessible[msg.sender];
-    }
-
-    /**
-     *  Check if a user has valid permission for a content
-     * @param _contentId IPFS CID of the content
-     * @param _user Address of the user
-     * @return bool indicating whether the user has valid permission
-     */
-    function _userHasAccess(string memory _contentId, address _user) internal view returns (bool) {
-        AccessPermission[] memory permissions = contentAccess[_contentId];
-        for (uint256 i = 0; i < permissions.length; i++) {
-            if (permissions[i].user == _user && permissions[i].expiryDate > block.timestamp) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     *  Check if a user has access to content
-     * @param _contentId IPFS CID of the content
-     * @param _user Address of the user
-     * @return True if user has access
-     */
-    function checkAccess(string memory _contentId, address _user) external view returns (bool) {
+    function hasAccess(string memory _contentId, address _user) public view returns (bool) {
         return (
-            coreContract.isContentPublic(_contentId) || 
-            coreContract.isContentOwner(_contentId, _user) || 
-            _userHasAccess(_contentId, _user)
+            eduStore.isContentPublic(_contentId) || 
+            eduStore.isContentOwner(_contentId, _user) ||
+            (permissions[_contentId][_user] > 0 && permissions[_contentId][_user] > block.timestamp)
         );
     }
 
-    /**
-     *  Remove existing access permission
-     * @param _contentId IPFS CID of the content
-     * @param _user Address of the user
-     */
-    function _removeExistingAccess(string memory _contentId, address _user) internal {
-        AccessPermission[] storage permissions = contentAccess[_contentId];
-        for (uint256 i = 0; i < permissions.length; i++) {
-            if (permissions[i].user == _user) {
-                permissions[i] = permissions[permissions.length - 1];
-                permissions.pop();
-                break;
-            }
-        }
+    function getUserAccess(address _user) external view returns (string[] memory) {
+        return userAccess[_user];
     }
 }
