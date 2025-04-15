@@ -4,6 +4,7 @@ import Navbar from './component/Navbar';
 import HomePage from './component/HomePage';
 import Footer from './component/Footer';
 import '@rainbow-me/rainbowkit/styles.css';
+import RoleSelectionPage from './component/RoleSelectionPage';
 import {
   getDefaultConfig,
   RainbowKitProvider,
@@ -42,6 +43,7 @@ function App() {
           <main className="flex-grow">
           <Routes>
              <Route path="/" element={<HomePage />} />
+             <Route path="/roles" element={<RoleSelectionPage />} />
           </Routes>
           </main>
           <Footer />
