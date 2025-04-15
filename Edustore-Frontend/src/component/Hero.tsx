@@ -1,8 +1,12 @@
 import globe from "../assets/3d.png";
 import cap from "../assets/cap.png";
 import filecoin from "../assets/filecoin.png";
+import {useNavigate} from "react-router-dom";
 
 const HomePage = () => {
+
+  const navigate = useNavigate();
+
   return (
     <div className="bg-[#F8FAF5]">
       {/* Hero Section */}
@@ -19,10 +23,10 @@ const HomePage = () => {
               access materials anytime, anywhere.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <button className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors">
+              <button className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors" onClick={() => navigate('/roles')}>
                 Launch MVP
               </button>
-              <button className="bg-white text-black px-6 py-3 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors">
+              <button className="bg-white text-black px-6 py-3 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors" onClick={() => navigate('/features')}>
                 Explore Features
               </button>
             </div>
