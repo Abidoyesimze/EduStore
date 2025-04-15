@@ -8,7 +8,7 @@ const Navbar = () => {
  
 
   return (
-    <nav className="bg-[#F8FAF5] py-6 px-6">
+    <nav className=" py-6 px-6 z-10 relative">
       <div className="max-w-7xl mx-auto">
         {/* White rounded container */}
         <div className="bg-white rounded-lg shadow-sm px-6 py-4">
