@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './component/Navbar';
 import HomePage from './component/HomePage';
 import Footer from './component/Footer';
+import Features from './component/features';
 import '@rainbow-me/rainbowkit/styles.css';
 import {
   getDefaultConfig,
@@ -42,6 +43,7 @@ function App() {
           <main className="flex-grow">
           <Routes>
              <Route path="/" element={<HomePage />} />
+             <Route path='/features' element={<Features />} />
           </Routes>
           </main>
           <Footer />
