@@ -48,24 +48,26 @@ const HomePage = () => {
               alt="3D Earth with educational resources" 
               className="w-full max-w-md relative z-10"
             />
+
+            {/* Graduation Cap */}
+            <div className="absolute z-20 top-[5%] left-[50%] transform -translate-x-1/2 animate-bounce">
+              <img 
+              src={cap} 
+              alt="Graduation Cap" 
+              className="w-18"
+              />
+            </div>
             
             {/* Filecoin Logo */}
-            <div className="absolute z-[20px] left-90  animate-pulse">
+            <div className="absolute z-20 bottom-[5%] left-[50%] transform -translate-x-1/2 animate-pulse">
               <img 
-                src={filecoin} 
-                alt="Filecoin Logo" 
-                className="w-18 h-11"
+              src={filecoin} 
+              alt="Filecoin Logo" 
+              className="w-18 h-11"
               />
             </div>
             
-            {/* Graduation Cap */}
-            <div className="absolute z-20 bottom-[2%] left-[25%] animate-bounce ">
-              <img 
-                src={cap} 
-                alt="Graduation Cap" 
-                className="w-18"
-              />
-            </div>
+            
             
             {/* Curved Arrow */}
             <div className="absolute left-0 top-1/4 w-full h-full z-0">
