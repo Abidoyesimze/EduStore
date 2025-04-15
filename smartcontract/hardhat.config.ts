@@ -2,13 +2,14 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-deploy";
 import "hardhat-deploy-ethers";
-// import "./tasks";
 import * as dotenv from "dotenv";
 
-// Load environment variables
 dotenv.config();
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
+if (!PRIVATE_KEY) {
+  throw new Error("Please set your PRIVATE_KEY in a .env file");
+}
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -16,9 +17,10 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1000,
-        details: { yul: false },
+        runs: 200,
       },
+      evmVersion: "paris",
+      viaIR: false,
     },
   },
   defaultNetwork: "calibrationnet",
@@ -32,6 +34,9 @@ const config: HardhatUserConfig = {
       chainId: 314159,
       url: "https://api.calibration.node.glif.io/rpc/v1",
       accounts: [PRIVATE_KEY],
+      gasPrice: 1000000000,
+      gas: 20000000,
+      timeout: 120000,
     },
     filecoinmainnet: {
       chainId: 314,
@@ -44,6 +49,40 @@ const config: HardhatUserConfig = {
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",
+  },
+  namedAccounts: {
+    deployer: {
+      default: 0,
+    },
+  },
+  sourcify: {
+    enabled: true,
+  },
+  
+  etherscan: {
+    apiKey: {
+      
+      calibrationnet: "no-api-key-required",
+      filecoinmainnet: "no-api-key-required"
+    },
+    customChains: [
+      {
+        network: "calibrationnet",
+        chainId: 314159,
+        urls: {
+          apiURL: "https://calibration.filfox.info/api/v1/contract",
+          browserURL: "https://calibration.filfox.info/en"
+        }
+      },
+      {
+        network: "filecoinmainnet",
+        chainId: 314,
+        urls: {
+          apiURL: "https://filfox.info/api/v1/contract",
+          browserURL: "https://filfox.info/en"
+        }
+      }
+    ]
   },
 };
 
