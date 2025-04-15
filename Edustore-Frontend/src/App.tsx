@@ -5,6 +5,7 @@ import HomePage from './component/HomePage';
 import Footer from './component/Footer';
 import Features from './component/features';
 import '@rainbow-me/rainbowkit/styles.css';
+import RoleSelectionPage from './component/RoleSelectionPage';
 import {
   getDefaultConfig,
   RainbowKitProvider,
@@ -44,6 +45,7 @@ function App() {
           <Routes>
              <Route path="/" element={<HomePage />} />
              <Route path='/features' element={<Features />} />
+             <Route path="/roles" element={<RoleSelectionPage />} />
           </Routes>
           </main>
           <Footer />
