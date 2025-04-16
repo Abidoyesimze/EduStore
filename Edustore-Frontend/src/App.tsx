@@ -6,14 +6,12 @@ import Footer from './component/Footer';
 import Features from './component/Features';
 import '@rainbow-me/rainbowkit/styles.css';
 import RoleSelectionPage from './component/RoleSelectionPage';
-//import Services from './component/Services';
-//import About from './component/About';
-//import Contact from './component/Contact';
 import '@rainbow-me/rainbowkit/styles.css';
 import EducatorDashboard from './component/dashboard/EducatorDashboard';
 import UploadFile from './component/dashboard/UploadFile';
 import MyFiles from './component/dashboard/MyFiles';
 import AccessControl from './component/dashboard/AccessControl';
+import Dashboard from './component/Dashboard';
 import {
   getDefaultConfig,
   RainbowKitProvider,
@@ -43,18 +41,18 @@ const config = getDefaultConfig({
 const queryClient = new QueryClient();
 
 // Layout component to handle conditional rendering of Navbar and Footer
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const location = useLocation();
-  const isDashboard = location.pathname === '/dashboard';
+// const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+//   const location = useLocation();
+//   const isDashboard = location.pathname === '/dashboard';
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      {!isDashboard && <Navbar />}
-      <main className="flex-grow">{children}</main>
-      {!isDashboard && <Footer />}
-    </div>
-  );
-};
+//   return (
+//     <div className="min-h-screen flex flex-col">
+//       {!isDashboard && <Navbar />}
+//       <main className="flex-grow">{children}</main>
+//       {!isDashboard && <Footer />}
+//     </div>
+//   );
+// };
 
 function App() {
   return (
@@ -73,6 +71,7 @@ function App() {
               <Route path="/upload" element={<UploadFile />} />
               <Route path="/files" element={<MyFiles />} />
               <Route path="/access" element={<AccessControl />} />
+              <Route path='/student-dashboard' element={<Dashboard/>} />
           </Routes>
           </main>
           <Footer />
