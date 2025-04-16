@@ -66,11 +66,11 @@ const Dashboard: React.FC = () => {
       {/* Sidebar */}
       <aside className="bg-white flex flex-col items-center py-6 w-16 lg:w-60 transition-all duration-300">
   {/* Logo */}
-  <div className="flex items-center mb-10 w-full justify-center lg:justify-start">
+  {/* <div className="flex items-center mb-10 w-full justify-center lg:justify-start">
   <Link to="/" className="flex items-center">
     <img src={logo} alt="EduStore Logo" className="h-8 w-auto" />
   </Link>
-  </div>
+  </div> */}
 
 
   {/* Navigation */}
@@ -84,7 +84,7 @@ const Dashboard: React.FC = () => {
       <button
         key={label}
         onClick={() => handleNavigation(label)}
-        className="text-[#B7A400] hover:text-yellow-600 group flex items-center w-10/12 relative"
+        className="white-[#B7A400] hover:text-yellow-600 group flex items-center w-10/12 relative"
       >
         <Icon size={22} className="mx-auto lg:mx-0" />
         <span className="absolute left-14 bg-gray-700 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 lg:hidden whitespace-nowrap">
@@ -113,29 +113,24 @@ const Dashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-      <header className="bg-white text-black p-4 flex flex-wrap items-center justify-between gap-4 md:gap-10">
-  <div className="flex flex-wrap items-center gap-4 md:gap-6">
-    <button className="flex items-center gap-2">
-      <img className="w-5 h-5" src={Vector8} alt="Access" />
-      <span className="text-sm md:text-base cursor-pointer">Access Requests</span>
-    </button>
+      <header className="bg-white text-black p-4 flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-gray-800">
+          Welcome Godwin 👋
+        </h1>
+        <div className="flex items-center gap-4 md:gap-6">
+          <button className="flex items-center gap-2">
+        <img className="w-5 h-5" src={Vector8} alt="Access" />
+        <span className="text-sm md:text-base cursor-pointer">Access Requests</span>
+          </button>
+          <button className="flex items-center gap-2">
+        <img className="w-5 h-5" src={Vector9} alt="Downloads" />
+        <span className="text-sm md:text-base cursor-pointer">My Downloads</span>
+          </button>
+        </div>
+      </header>
 
-    <button className="flex items-center gap-2">
-      <img className="w-5 h-5" src={Vector9} alt="Downloads" />
-      <span className="text-sm md:text-base cursor-pointer">My Downloads</span>
-    </button>
-  </div>
-
-  <span className="text-sm font-mono break-words">0xB8...4aBa</span>
-</header>
-
-
-        <main className="p-4 sm:p-6 space-y-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl font-semibold text-gray-800">
-              Welcome Godwin 👋
-            </h1>
-          </div>
+      <main className="p-4 sm:p-6 space-y-6">
+        
 
           {/* Metrics */}
           <section>
