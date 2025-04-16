@@ -1,8 +1,6 @@
-EduStore
+EduStore Decentralised Educational Storage Platform
 
-# Decentralized Educational Storage Platform
-
-A decentralized application (dApp) that enables secure, scalable, and cost-effective storage of educational content—such as research papers, course materials, and administrative records—leveraging Filecoin's decentralized storage network, IPFS for content addressing, and FVM-based smart contracts for automated storage deal management.
+A decentralised application (dApp) that enables secure, scalable, and cost-effective storage of educational content, such as research papers, course materials, and administrative records—leveraging Filecoin's decentralised storage network, IPFS for content addressing, and FVM-based smart contracts for automated storage deal management.
 
 ## Table of Contents
 
@@ -20,8 +18,8 @@ A decentralized application (dApp) that enables secure, scalable, and cost-effec
 
 Educational institutions often face challenges with traditional storage systems, including scalability issues, high costs, and data security concerns. This platform addresses these challenges by:
 
-- Utilizing IPFS for decentralized file storage and content addressing.
-- Employing Filecoin's network for incentivized, verifiable storage.
+- Utilising IPFS for decentralised file storage and content addressing.
+- Employing Filecoin's network for incentivised, verifiable storage.
 - Implementing FVM-based smart contracts to automate storage deal management, verification, and renewals.
 - Providing a user-friendly interface for educators, students, and administrators to manage educational content seamlessly.
 
