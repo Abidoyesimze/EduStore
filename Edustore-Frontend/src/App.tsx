@@ -23,6 +23,7 @@ import {
   optimism,
   arbitrum,
   base,
+  filecoinCalibration
 } from 'wagmi/chains';
 import {
   QueryClientProvider,
@@ -33,7 +34,7 @@ import {
 const config = getDefaultConfig({
   appName: 'Edustore',
   projectId: 'YOUR_PROJECT_ID',
-  chains: [mainnet, polygon, optimism, arbitrum, base],
+  chains: [mainnet, polygon, optimism, arbitrum, base, filecoinCalibration],
   ssr: true,
 });
 
