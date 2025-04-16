@@ -4,12 +4,16 @@ import Navbar from './component/Navbar';
 import HomePage from './component/HomePage';
 import Footer from './component/Footer';
 import Features from './component/Features';
-import Dashboard from './component/Dashboard';
+import '@rainbow-me/rainbowkit/styles.css';
 import RoleSelectionPage from './component/RoleSelectionPage';
 //import Services from './component/Services';
 //import About from './component/About';
 //import Contact from './component/Contact';
 import '@rainbow-me/rainbowkit/styles.css';
+import EducatorDashboard from './component/dashboard/EducatorDashboard';
+import UploadFile from './component/dashboard/UploadFile';
+import MyFiles from './component/dashboard/MyFiles';
+import AccessControl from './component/dashboard/AccessControl';
 import {
   getDefaultConfig,
   RainbowKitProvider,
@@ -57,61 +61,23 @@ function App() {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
-          <Router>
-            <Routes>
-              {/* Routes with Navbar and Footer */}
-              <Route
-                path="/"
-                element={
-                  <Layout>
-                    <HomePage />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/features"
-                element={
-                  <Layout>
-                    <Features />
-                  </Layout>
-                }
-              />
-              {/* <Route
-                path="/services"
-                element={
-                  <Layout>
-                    <Services />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/about"
-                element={
-                  <Layout>
-                    <About />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/contact"
-                element={
-                  <Layout>
-                    <Contact />
-                  </Layout>
-                }
-              /> */}
-              <Route
-                path="/roles"
-                element={
-                  <Layout>
-                    <RoleSelectionPage />
-                  </Layout>
-                }
-              />
-              {/* Dashboard route without Navbar and Footer */}
-              <Route path="/dashboard" element={<Dashboard />} />
-            </Routes>
-          </Router>
+        <Router>
+          <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <main className="flex-grow">
+          <Routes>
+             <Route path="/" element={<HomePage />} />
+             <Route path='/features' element={<Features />} />
+             <Route path="/roles" element={<RoleSelectionPage />} />
+              <Route path="/Educator-dashboard" element={<EducatorDashboard />} />
+              <Route path="/upload" element={<UploadFile />} />
+              <Route path="/files" element={<MyFiles />} />
+              <Route path="/access" element={<AccessControl />} />
+          </Routes>
+          </main>
+          <Footer />
+         </div>
+        </Router>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

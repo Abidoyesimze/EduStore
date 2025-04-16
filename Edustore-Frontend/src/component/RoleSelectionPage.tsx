@@ -3,19 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import Educator from "../assets/educator.png";
 import Student from "../assets/student.png";
 
-
 const roles = [
   {
     title: 'Student',
     description: 'Access learning materials from anywhere, anytime',
-    image: Student
-    
+    image: Student,
+    route: '/student-dashboard', // Add the route for the student dashboard
   },
   {
     title: 'Educator',
     description: 'Securely store and share lessons, syllabi, and assessments',
-    image: Educator 
-    
+    image: Educator,
+    route: '/Educator-dashboard', 
   },
 ];
 
