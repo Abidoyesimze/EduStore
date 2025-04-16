@@ -332,12 +332,16 @@ export const useFilecoinStorage = (apiKey: string) => {
   
   // Get storage providers in the Filecoin network
   // Get storage providers in the Filecoin network
-const getStorageProviders = async () => {
-    
-    
+  const getStorageProviders = async () => {
     return [
-      { address: utils.getAddress("0x71C7656EC7ab88b098defB751B7401B5f6d8976F"), name: "EduStore Provider 1" },
-      { address: utils.getAddress("0xF39Fd6e51aad88F6F4ce6aB8827279cffFb92266"), name: "EduStore Provider 2" }
+      {
+        address: utils.getAddress(import.meta.env.VITE_PROVIDER_1_ADDRESS),
+        name: "EduStore Provider 1",
+      },
+      {
+        address: utils.getAddress(import.meta.env.VITE_PROVIDER_2_ADDRESS),
+        name: "EduStore Provider 2",
+      },
     ];
   };
 
