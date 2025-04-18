@@ -48,13 +48,16 @@ const HomePage = () => {
           <div className="flex justify-center relative">
             {/* Main Globe Image */}
             <img 
-              src={globe} 
-              alt="3D Earth with educational resources" 
-              className="w-full max-w-md relative z-10"
-            />
+  src={globe} 
+  alt="3D Earth with educational resources" 
+  className="w-full max-w-md relative z-10 animate-spin [animation-duration:3s]"
+  // ⬆️ here we manually set animation duration using square brackets
+/>
+
+
 
             {/* Graduation Cap */}
-            <div className="absolute z-20 top-[5%] left-[50%] transform -translate-x-1/2 animate-bounce">
+            <div className="absolute z-20 top-[5%] left-[80%] transform -translate-x-1/2 animate-bounce">
               <img 
               src={cap} 
               alt="Graduation Cap" 
@@ -63,7 +66,7 @@ const HomePage = () => {
             </div>
             
             {/* Filecoin Logo */}
-            <div className="absolute z-20 bottom-[5%] left-[50%] transform -translate-x-1/2 animate-pulse">
+            <div className="absolute z-20 top-[30%] left-[12%] transform -translate-x-1/2 animate-pulse">
               <img 
               src={filecoin} 
               alt="Filecoin Logo" 
@@ -74,7 +77,7 @@ const HomePage = () => {
             
             
             {/* Curved Arrow */}
-            <div className="absolute left-0 top-1/4 w-full h-full z-0">
+            <div className="absolute left-0g top-1/4 w-full h-full z-1">
               <svg
                 className="w-full h-full"
                 viewBox="0 0 200 200"
