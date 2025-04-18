@@ -180,7 +180,7 @@ Contributions are welcome! Please follow these steps:
 This project is licensed under the [MIT License](LICENSE).
 
 Authors & Acknowledgements
-@Beautify – Project Lead
+@Beutife – Project Lead
 
 Contributors – @Abidoyesimze @oluwatomilola , @oluwasina97
 
