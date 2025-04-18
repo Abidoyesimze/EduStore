@@ -1,6 +1,7 @@
 import EduAccessControl from "./ABI/EduAccessControl.json";
 import EduCore from "./ABI/EduCore.json";
-import EduStore from "./ABI/EduStore.json"
+import EduStore from "./ABI/EduStore.json";
+import { getAddress } from "ethers";
 
 export const EduAccessControlContract = {
     address: "0xb9BBced3781fB125544153593908CB62ee6E0f51",
@@ -13,6 +14,6 @@ export const EduAccessControlContract = {
   };
 
     export const EduStoreContract = {
-        address: "0x3D7A2b1aF2b8D1c4B5E6C8dA9E1b8F2D5C6e5E4C",
+        address: getAddress("0x762032BFeaC41757F28A36C9841bFF7b9a22152d"),
         abi: EduStore,
     };

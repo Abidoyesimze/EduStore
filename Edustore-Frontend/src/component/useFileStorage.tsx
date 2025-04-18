@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import lighthouse from '@lighthouse-web3/sdk';
 import { toast } from 'react-toastify';
-import { utils } from 'ethers';
+import { getAddress } from 'ethers';
 
 export interface IUploadProgressCallback {
   total: number;
@@ -314,6 +314,7 @@ export const useFilecoinStorage = (apiKey: string) => {
       setIsUploading(false);
     }
   };
+  
   // Function to get metadata about a file stored on Filecoin
   const getFilecoinMetadata = async (cid: string) => {
     try {
@@ -331,17 +332,17 @@ export const useFilecoinStorage = (apiKey: string) => {
   };
   
   // Get storage providers in the Filecoin network
-  // Get storage providers in the Filecoin network
   const getStorageProviders = async () => {
+    // Using ethers.js to ensure addresses are properly checksummed
     return [
-      {
-        address: utils.getAddress(import.meta.env.VITE_PROVIDER_1_ADDRESS),
-        name: "EduStore Provider 1",
+      { 
+        address: getAddress("0x71C7656EC7ab88b098defB751B7401B5f6d8976F"), 
+        name: "EduStore Provider 1" 
       },
-      {
-        address: utils.getAddress(import.meta.env.VITE_PROVIDER_2_ADDRESS),
-        name: "EduStore Provider 2",
-      },
+      { 
+        address: getAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"), 
+        name: "EduStore Provider 2" 
+      }
     ];
   };
 
@@ -357,4 +358,3 @@ export const useFilecoinStorage = (apiKey: string) => {
     uploadError
   };
 };
-

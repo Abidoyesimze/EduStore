@@ -1,4 +1,3 @@
-// src/components/Dashboard.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
@@ -12,6 +11,7 @@ import Vector11 from '../assets/Vector (11).png';
 import Vector12 from '../assets/Vector (12).png';
 import Vector13 from '../assets/Vector (13).png';
 import Ellipse1 from '../assets/Ellipse 4 (1).png';
+import { useNavigate } from 'react-router-dom';
 
 const user1 = Vector13;
 const user2 = Ellipse1;
@@ -53,8 +53,28 @@ const metrics = {
 };
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+
   const handleNavigation = (section: string) => {
-    console.log(`Navigating to ${section}`);
+    switch (section) {
+      case 'My Resources':
+        navigate('/resources');
+        break;
+      case 'Home':
+        navigate('/student-dashboard');
+        break;
+      case 'Notifications':
+        navigate('/notifications');
+        break;
+      case 'Explore':
+        navigate('/explore');
+        break;
+      case 'Settings':
+        navigate('/settings');
+        break;
+      default:
+        console.log(`Navigating to ${section}`);
+    }
   };
 
   const handleViewNotification = (id: number) => {
