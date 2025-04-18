@@ -80,6 +80,7 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
   // Pinata API functions
   const pinFileToIPFS = async (file: File): Promise<string> => {
     try {
+      console.log('Starting Pinata upload...');
       const formData = new FormData();
       formData.append('file', file);
       formData.append('pinataMetadata', JSON.stringify({ name: file.name }));
@@ -95,10 +96,12 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
   
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('Pinata upload failed:', response.status, errorData);
         throw new Error(`Pinata file upload failed: ${response.status} - ${errorData.error?.details || response.statusText}`);
       }
   
       const data = await response.json();
+      console.log('Pinata upload successful:', data);
       return data.IpfsHash;
     } catch (error: any) {
       console.error('Pinata upload error:', error);
@@ -213,7 +216,13 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
         address: EduCoreContract.address as `0x${string}`,
         abi: EduCoreContract.abi,
         functionName: 'storeContent',
-        args: [contentId, fileName, accessType === 'public'],
+        args: [
+          contentId, 
+          fileName, 
+          accessType === 'public',
+          '', // Empty description
+          tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) // Convert tags string to array
+        ],
       });
     } catch (error: any) {
       console.error('Error storing content:', error);
@@ -300,9 +309,18 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
       return;
     }
 
-    try {
+    // Check file size (optional, but good practice)
+    const maxFileSize = 100 * 1024 * 1024; // 100MB
+    if (selectedFile.size > maxFileSize) {
+      toast.error('File size exceeds 100MB limit');
+      setUploadError('File size exceeds 100MB limit');
+      return;
+    }
+
       const processToastId = 'file-process-toast';
-      toast.info('Uploading file to IPFS via Pinata...', {
+    try {
+      console.log('Starting upload process...');
+      toast.info('Preparing file upload to Filecoin...', {
         autoClose: false,
         toastId: processToastId,
         position: 'top-right',
@@ -313,43 +331,148 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
       });
 
       setUploadStep('uploading');
+      setIsTransactionInProgress(true);
 
-      // Upload file to Pinata
-      const fileCID = await pinFileToIPFS(selectedFile);
-      console.log('File uploaded with CID:', fileCID);
+      // Upload file using Lighthouse with retry logic
+      console.log('Uploading file to Lighthouse...');
+      let uploadAttempts = 0;
+      const maxUploadAttempts = 3;
+      let contentId = null;
 
-      // Create and upload metadata
-      const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase() || 'unknown';
-      const metadata: FileMetadata = {
-        title: fileName,
-        type: fileExtension,
-        size: `${(selectedFile.size / 1024).toFixed(1)} KB`,
-        uploadDate: new Date().toISOString().split('T')[0],
-        access: accessType,
-        fileCID,
-        tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-      };
+      while (uploadAttempts < maxUploadAttempts && !contentId) {
+        try {
+          contentId = await uploadWithProgress(selectedFile, processToastId);
+          console.log('File uploaded with CID:', contentId);
+          break;
+        } catch (error: any) {
+          uploadAttempts++;
+          if (uploadAttempts === maxUploadAttempts) {
+            throw new Error(`Upload failed after ${maxUploadAttempts} attempts: ${error.message}`);
+          }
+          console.log(`Upload attempt ${uploadAttempts} failed, retrying...`);
+          toast.update(processToastId, {
+            render: `Upload attempt ${uploadAttempts} failed, retrying...`,
+            type: 'warning',
+            autoClose: false,
+            isLoading: true,
+          });
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
 
-      const metadataCID = await pinJSONToIPFS(metadata, `${fileName}_metadata.json`);
-      console.log('Metadata uploaded with CID:', metadataCID);
+      if (!contentId) {
+        throw new Error('Failed to upload file after multiple attempts');
+      }
 
+      // Update toast to show successful upload
       toast.update(processToastId, {
-        render: 'File and metadata uploaded successfully! Registering on blockchain...',
+        render: 'File uploaded successfully! Registering on blockchain...',
         type: 'info',
         autoClose: false,
         isLoading: true,
       });
 
-      setContentCID(metadataCID);
-      await storeContentOnChain(metadataCID);
+      // Save the content ID
+      setContentCID(contentId);
+
+      // Store content on blockchain
+      console.log('Calling storeContentOnChain...');
+      await storeContentOnChain(contentId);
+
+      // Monitor transaction status with increased timeout
+      let transactionConfirmed = false;
+      const maxAttempts = 60; // 60 seconds timeout
+      let attempts = 0;
+
+      while (!transactionConfirmed && attempts < maxAttempts) {
+        if (isConfirmedCore) {
+          transactionConfirmed = true;
+          break;
+        }
+        if (errorCore) {
+          throw new Error(`Transaction failed: ${errorCore.message}`);
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        attempts++;
+      }
+
+      if (!transactionConfirmed) {
+        throw new Error('Transaction timeout. Please check your wallet.');
+      }
+
+      // Update success state
+      setUploadStep('complete');
+      toast.update(processToastId, {
+        render: 'File uploaded and registered successfully!',
+        type: 'success',
+        autoClose: 5000,
+        isLoading: false,
+      });
+
+      // Reset form
+      setFileName('');
+      setTags('');
+      setSelectedFile(null);
+      setAccessType('public');
+      setSelectedPlan(null);
     } catch (error: any) {
       console.error('Error during upload process:', error);
-      toast.error(`Failed to upload file: ${error.message || 'Unknown error'}`);
-      setUploadError(`Failed to upload file: ${error.message || 'Unknown error'}`);
+      const errorMessage = error.message || 'Unknown error occurred';
+      toast.error(`Failed to upload file: ${errorMessage}`);
+      setUploadError(`Failed to upload file: ${errorMessage}`);
       setUploadStep('error');
+    } finally {
       setIsTransactionInProgress(false);
+      if (coreTransactionTimeout) {
+        clearTimeout(coreTransactionTimeout);
+        setCoreTransactionTimeout(null);
+      }
     }
   };
+
+  // Monitor core contract transaction status
+  useEffect(() => {
+    const processToastId = 'file-process-toast';
+
+    if (isPendingCore) {
+      toast.update(processToastId, {
+        render: 'Submitting content registration to blockchain...',
+        type: 'info',
+        autoClose: false,
+        isLoading: true,
+      });
+    }
+
+    if (isConfirmingCore) {
+      toast.update(processToastId, {
+        render: 'Confirming content registration...',
+        type: 'info',
+        autoClose: false,
+        isLoading: true,
+      });
+    }
+
+    if (isConfirmedCore) {
+      toast.update(processToastId, {
+        render: 'Content successfully registered! Ready to create storage deal.',
+        type: 'success',
+        autoClose: 5000,
+        isLoading: false,
+      });
+      setShowDealConfirmation(true);
+    }
+
+    if (errorCore) {
+      toast.update(processToastId, {
+        render: `Content registration failed: ${errorCore.message || 'Unknown error'}`,
+        type: 'error',
+        autoClose: 5000,
+        isLoading: false,
+      });
+      setUploadStep('error');
+    }
+  }, [isPendingCore, isConfirmingCore, isConfirmedCore, errorCore]);
 
   // Handle storage deal creation
   const handleContinueToStorageDeal = async () => {
@@ -387,59 +510,6 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
       setContentCID(null);
     }
   };
-
-  // Monitor core transaction status
-  useEffect(() => {
-    const processToastId = 'file-process-toast';
-
-    if (isConfirmedCore || errorCore) {
-      if (coreTransactionTimeout) {
-        clearTimeout(coreTransactionTimeout);
-        setCoreTransactionTimeout(null);
-      }
-    }
-
-    if (isPendingCore) {
-      toast.update(processToastId, {
-        render: 'Submitting content registration to blockchain...',
-        type: 'info',
-        autoClose: false,
-        isLoading: true,
-      });
-    }
-
-    if (isConfirmingCore) {
-      toast.update(processToastId, {
-        render: 'Confirming content registration...',
-        type: 'info',
-        autoClose: false,
-        isLoading: true,
-      });
-    }
-
-    if (isConfirmedCore) {
-      toast.update(processToastId, {
-        render: 'Content successfully registered! Ready to create storage deal.',
-        type: 'success',
-        autoClose: 5000,
-        isLoading: false,
-      });
-      setShowDealConfirmation(true);
-      setIsTransactionInProgress(false);
-    }
-
-    if (errorCore) {
-      toast.update(processToastId, {
-        render: `Content registration failed: ${errorCore.message || 'Transaction was rejected'}`,
-        type: 'error',
-        autoClose: 5000,
-        isLoading: false,
-      });
-      setUploadStep('error');
-      setUploadError(`Content registration failed: ${errorCore.message || 'Transaction was rejected'}`);
-      setIsTransactionInProgress(false);
-    }
-  }, [isPendingCore, isConfirmingCore, isConfirmedCore, errorCore]);
 
   // Monitor storage deal transaction status
   useEffect(() => {

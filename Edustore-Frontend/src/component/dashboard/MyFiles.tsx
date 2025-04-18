@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
+import { BrowserProvider, JsonRpcProvider, Contract } from 'ethers';
+import { EduCoreContract } from '../index';
+import lighthouse from '@lighthouse-web3/sdk';
 
 // Simple ABI for just the getMyContent function
 const MINIMAL_ABI = [
@@ -24,6 +27,18 @@ interface File {
   fileCID: string;
   tags: string[];
   icon: string;
+  originalName?: string;
+  contentUrl?: string;
+}
+
+interface LighthouseFileInfo {
+  data: {
+    fileSizeInBytes: string;
+    cid: string;
+    encryption: boolean;
+    fileName: string;
+    mimeType: string;
+  };
 }
 
 const MyFiles = () => {
@@ -32,9 +47,13 @@ const MyFiles = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
+  const lighthouseApiKey = import.meta.env.VITE_LIGHTHOUSE_API_KEY;
 
-  const CONTRACT_ADDRESS = '0x73f46Db18E5b171318a55508873BdD0691209864';
+  // Use the imported contract address
+  const CONTRACT_ADDRESS = EduCoreContract.address;
 
   // Function to fetch content using ethers.js directly
   const fetchContent = async () => {
@@ -47,10 +66,13 @@ const MyFiles = () => {
 
       // Try to get provider from browser wallet
       if (window.ethereum) {
-        provider = new ethers.BrowserProvider(window.ethereum);
+        console.log('Found window.ethereum, attempting to connect...');
+        provider = new BrowserProvider(window.ethereum);
         try {
           await window.ethereum.request({ method: 'eth_requestAccounts' });
           signer = await provider.getSigner();
+          const address = await signer.getAddress();
+          console.log('Connected wallet address:', address);
         } catch (walletErr) {
           console.warn('Could not get signer from wallet:', walletErr);
         }
@@ -58,11 +80,13 @@ const MyFiles = () => {
 
       // Fallback to public RPC
       if (!provider) {
-        provider = new ethers.JsonRpcProvider('https://api.calibration.node.glif.io/rpc/v1');
+        console.log('No wallet provider found, using public RPC...');
+        provider = new JsonRpcProvider('https://api.calibration.node.glif.io/rpc/v1');
       }
 
       // Create contract instance
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, MINIMAL_ABI, signer || provider);
+      console.log('Creating contract instance with address:', CONTRACT_ADDRESS);
+      const contractInstance = new Contract(CONTRACT_ADDRESS, MINIMAL_ABI, signer || provider);
 
       // Verify network
       const network = await provider.getNetwork();
@@ -73,15 +97,16 @@ const MyFiles = () => {
 
       // Call getMyContent
       console.log('Calling getMyContent...');
-      const result = await contract.getMyContent();
-      console.log('Raw result:', result);
+      const result = await contractInstance.getMyContent();
+      console.log('Raw result from getMyContent:', result);
 
       // Process CIDs
       if (Array.isArray(result)) {
-        console.log('Found', result.length, 'files');
-        setContentIds(result);
+        const validCids = result.filter(cid => cid && cid.length > 0);
+        console.log('Found', validCids.length, 'valid files:', validCids);
+        setContentIds(validCids);
       } else {
-        console.log('Result is not an array:', result);
+        console.error('Result is not an array:', result);
         setContentIds([]);
       }
     } catch (err: any) {
@@ -109,21 +134,48 @@ const MyFiles = () => {
       const filePromises = contentIds.map(async (contentId) => {
         try {
           const cid = contentId.startsWith('ipfs://') ? contentId.substring(7) : contentId;
-          const response = await fetch(`https://gateway.lighthouse.storage/ipfs/${cid}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-          });
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          
+          // Get file info from Lighthouse
+          const fileInfo = await lighthouse.getFileInfo(cid) as LighthouseFileInfo;
+          
+          if (!fileInfo || !fileInfo.data) {
+            throw new Error('Failed to get file info from Lighthouse');
           }
-          const metadata: File = await response.json();
+
+          // Get file type from content type
+          let fileType = 'unknown';
+          if (fileInfo.data.mimeType) {
+            if (fileInfo.data.mimeType.includes('image')) fileType = 'image';
+            else if (fileInfo.data.mimeType.includes('pdf')) fileType = 'pdf';
+            else if (fileInfo.data.mimeType.includes('text')) fileType = 'text';
+            else if (fileInfo.data.mimeType.includes('video')) fileType = 'video';
+            else if (fileInfo.data.mimeType.includes('audio')) fileType = 'audio';
+          }
+
+          // Get file size
+          const size = parseInt(fileInfo.data.fileSizeInBytes) || 0;
+
+          // Get original filename
+          const originalName = fileInfo.data.fileName || 'Untitled';
+
+          // Generate access URL with API key
+          const contentUrl = `https://gateway.lighthouse.storage/ipfs/${cid}?api-key=${lighthouseApiKey}`;
+
           return {
-            ...metadata,
             id: contentId,
-            icon: getFileIcon(metadata.type),
-          };
-        } catch (err: any) {
-          console.error(`Error fetching metadata for ${contentId}:`, err);
+            title: originalName,
+            type: fileType,
+            size: formatFileSize(size),
+            uploadDate: new Date().toLocaleDateString(), // Lighthouse doesn't provide creation date
+            access: 'public',
+            fileCID: cid,
+            tags: [],
+            icon: getFileIcon(fileType),
+            originalName: originalName,
+            contentUrl: contentUrl
+          } as File;
+        } catch (err) {
+          console.error(`Error processing file ${contentId}:`, err);
           return {
             id: contentId,
             title: 'File Unavailable',
@@ -137,13 +189,43 @@ const MyFiles = () => {
           } as File;
         }
       });
+      
       const filesData = await Promise.all(filePromises);
       setFiles(filesData);
     } catch (err: any) {
-      console.error('Error fetching metadata:', err);
-      setError(`Failed to load file metadata: ${err.message}`);
+      setError(`Failed to load files: ${err.message}`);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Helper function to format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Update getFileIcon to handle more file types
+  const getFileIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'pdf':
+        return '📄';
+      case 'png':
+      case 'jpg':
+      case 'jpeg':
+      case 'gif':
+        return '🖼️';
+      case 'txt':
+        return '📝';
+      case 'mp4':
+        return '🎬';
+      case 'mp3':
+        return '🎵';
+      default:
+        return '📁';
     }
   };
 
@@ -166,24 +248,6 @@ const MyFiles = () => {
     return cid;
   };
 
-  // Get file icon based on type
-  const getFileIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'pdf':
-        return '📄';
-      case 'doc':
-      case 'docx':
-        return '📝';
-      case 'ppt':
-      case 'pptx':
-        return '📊';
-      case 'mp4':
-        return '🎬';
-      default:
-        return '📁';
-    }
-  };
-
   // Get IPFS gateway URL
   const getIpfsGatewayUrl = (contentId: string) => {
     if (!contentId) return '#';
@@ -203,6 +267,35 @@ const MyFiles = () => {
       file.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       file.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const openModal = (file: File) => {
+    setSelectedFile(file);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setSelectedFile(null);
+    setIsModalOpen(false);
+  };
+
+  // Helper function to download file
+  const downloadFile = async (file: File) => {
+    try {
+      const response = await fetch(file.contentUrl!);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.originalName || file.title;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Error downloading file:', err);
+      alert('Failed to download file. Please try again.');
+    }
+  };
 
   return (
     <div className="bg-white min-h-screen">
@@ -278,6 +371,9 @@ const MyFiles = () => {
                           File Name
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Preview
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Type
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -304,8 +400,48 @@ const MyFiles = () => {
                               </div>
                               <div className="ml-4">
                                 <div className="text-sm font-medium text-gray-900">{file.title}</div>
+                                {file.originalName && (
+                                  <div className="text-xs text-gray-500">Original: {file.originalName}</div>
+                                )}
                               </div>
                             </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {file.type === 'image' && file.contentUrl && (
+                              <div 
+                                className="h-12 w-12 cursor-pointer hover:opacity-75 transition-opacity"
+                                onClick={() => openModal(file)}
+                              >
+                                <img 
+                                  src={file.contentUrl} 
+                                  alt={file.title}
+                                  className="h-full w-full object-cover rounded"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            )}
+                            {file.type === 'pdf' && file.contentUrl && (
+                              <a 
+                                href={file.contentUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                View PDF
+                              </a>
+                            )}
+                            {file.type === 'text' && file.contentUrl && (
+                              <a 
+                                href={file.contentUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                View Text
+                              </a>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">{file.type.toUpperCase()}</div>
@@ -334,38 +470,70 @@ const MyFiles = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <a
-                              href={getIpfsGatewayUrl(file.id)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-900 mr-3"
-                            >
-                              View Metadata
-                            </a>
-                            {file.fileCID && (
-                              <a
-                                href={getFileDownloadUrl(file.fileCID)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-indigo-600 hover:text-indigo-900 mr-3"
-                              >
-                                Download
-                              </a>
-                            )}
                             <button
+                              onClick={() => openModal(file)}
                               className="text-blue-600 hover:text-blue-900"
-                              onClick={() => {
-                                navigator.clipboard.writeText(file.id);
-                                alert('Content ID copied to clipboard!');
-                              }}
                             >
-                              Copy CID
+                              View
                             </button>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {/* Image Preview Modal */}
+              {isModalOpen && selectedFile && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg max-w-4xl w-full mx-4">
+                    <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {selectedFile.title}
+                      </h3>
+                      <div className="flex items-center space-x-4">
+                        <button
+                          onClick={() => downloadFile(selectedFile)}
+                          className="text-indigo-600 hover:text-indigo-900 flex items-center"
+                        >
+                          <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          Download
+                        </button>
+                        <button
+                          onClick={closeModal}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      {selectedFile.type === 'image' && selectedFile.contentUrl && (
+                        <img
+                          src={selectedFile.contentUrl}
+                          alt={selectedFile.title}
+                          className="max-h-[70vh] w-auto mx-auto"
+                        />
+                      )}
+                      {selectedFile.type === 'pdf' && selectedFile.contentUrl && (
+                        <iframe
+                          src={selectedFile.contentUrl}
+                          className="w-full h-[70vh]"
+                          title={selectedFile.title}
+                        />
+                      )}
+                      {selectedFile.type === 'text' && selectedFile.contentUrl && (
+                        <div className="max-h-[70vh] overflow-auto bg-gray-50 p-4 rounded">
+                          <pre className="whitespace-pre-wrap">{selectedFile.contentUrl}</pre>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
