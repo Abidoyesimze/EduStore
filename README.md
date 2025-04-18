@@ -1,4 +1,4 @@
-EduStore Decentralised Educational Storage Platform
+OpenEdStore Decentralised Educational Storage Platform
 
 A decentralised application (dApp) that enables secure, scalable, and cost-effective storage of educational content, such as research papers, course materials, and administrative records—leveraging Filecoin's decentralised storage network, IPFS for content addressing, and FVM-based smart contracts for automated storage deal management.
 
@@ -16,7 +16,7 @@ A decentralised application (dApp) that enables secure, scalable, and cost-effec
 
 ## Overview
 
-Educational institutions often face challenges with traditional storage systems, including scalability issues, high costs, and data security concerns. This platform addresses these challenges by:
+Educational institutions often face challenges with traditional storage systems, including scalability issues, high costs, and data security concerns. OpenEdStore addresses these challenges by:
 
 - Utilising IPFS for decentralised file storage and content addressing.
 - Employing Filecoin's network for incentivised, verifiable storage.
@@ -27,6 +27,7 @@ Educational institutions often face challenges with traditional storage systems,
 
 - **Decentralized Storage**: Store educational content across a distributed network, ensuring high availability and resilience.
 - **Automated Deal Management**: Smart contracts handle storage deal initiation, verification, and renewal without manual intervention.
+- **Storage Renewal Notifications**: Users receive timely notifications before their storage deals expire, allowing them to renew or sign a new deal.
 - **Access Control**: Role-based permissions ensure that only authorized users can access or modify content.
 - **User-Friendly Interface**: Intuitive dashboards for uploading, managing, and retrieving educational materials.
 - **Cost Efficiency**: Leverage Filecoin's marketplace to optimize storage costs.
@@ -93,9 +94,40 @@ Educational institutions often face challenges with traditional storage systems,
 
 4. **Monitor Storage Deals**: View the status of storage deals, including verification results and renewal schedules.
 
+**LMS SDK**
+
+OpenEdStore provides a Software Development Kit (SDK) to integrate decentralized storage functionality into Learning Management Systems (LMS).
+
+**SDK Features:**
+
+Easy file upload to IPFS and Filecoin from within an LMS
+
+CID retrieval and access control integration
+
+Notifications for storage deal expiration
+
+Lightweight and easy-to-implement modules
+
+Coming Soon:
+
+SDK documentation and implementation examples
+
+Plugins for Moodle, Canvas, and other popular LMS platforms
+
+Upload Files: Users upload educational materials via the dashboard. Files are added to IPFS, generating a CID.
+
+Initiate Storage Deal: The platform automatically initiates a storage deal on Filecoin using the CID.
+
+Access Control: Set role-based file permissions.
+
+Monitor Storage Deals: View deal status, verification results, and receive renewal alerts.
+
+Extend/Sign New Deal: Upon notification, users can extend or initiate a new storage deal.
+
+
 ## Smart Contracts
 
-EduStore utilizes several smart contracts deployed on the Filecoin Virtual Machine (FVM):
+OpenEdStore utilizes several smart contracts deployed on the Filecoin Virtual Machine (FVM):
 
 - **StorageDealManager.sol**: Handles initiation, verification, and renewal of storage deals.
 - **AccessControl.sol**: Manages user roles and permissions for accessing content.
@@ -111,6 +143,12 @@ The user interface is designed with accessibility and ease of use in mind:
 - **File Manager**: Allows users to upload, download, and manage files.
 - **Access Settings**: Enable users to set permissions and share content securely.
 - **Notifications**: Alerts users about storage deal statuses, upcoming renewals, and verification results.
+
+## Screenshots
+
+![image](https://github.com/user-attachments/assets/1df05a32-29e8-4179-9ea3-b59bd96e6b00)
+![image](https://github.com/user-attachments/assets/3d105031-c082-48c6-9a7a-1b6b7ce1dab8)
+
 
 ## Contributing
 
@@ -141,6 +179,11 @@ Contributions are welcome! Please follow these steps:
 
 This project is licensed under the [MIT License](LICENSE).
 
----
+Authors & Acknowledgements
+@Beautify – Project Lead
+
+Contributors – @Abidoyesimze @oluwatomilola , @oluwasina97
+
+Special thanks to Filecoin, IPFS, FVM, and the open-source community
 
 For more information on building with Filecoin, IPFS, and FVM, consider exploring resources like the [FIL-Frame starter repository](https://github.com/FIL-Builders/fil-frame) and the [Filecoin Virtual Machine documentation](https://docs.filecoin.io/smart-contracts/fundamentals 
