@@ -19,6 +19,28 @@ export const useEduStoreContracts = () => {
     return await contract.hasAccess(contentId, userAddress);
   }, []);
 
+  const storeContent = useCallback(async (
+    contentId: string,
+    title: string,
+    isPublic: boolean,
+    description: string,
+    tags: string[]
+  ) => {
+    if (!window.ethereum) throw new Error('No Ethereum provider found');
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(EduCoreContract.address, EduCoreContract.abi, signer);
+    
+    try {
+      const tx = await contract.storeContent(contentId, title, isPublic, description, tags);
+      await tx.wait();
+      return true;
+    } catch (error) {
+      console.error('Error storing content:', error);
+      throw error;
+    }
+  }, []);
+
   const getAllContentIds = useCallback(async () => {
     if (!window.ethereum) throw new Error('No Ethereum provider found');
     const provider = new ethers.BrowserProvider(window.ethereum);
@@ -94,5 +116,12 @@ export const useEduStoreContracts = () => {
     }
   }, [checkAccess]);
 
-  return { getContentDetails, checkAccess, getAllContentIds, getPublicContent, viewContent };
+  return { 
+    getContentDetails, 
+    checkAccess, 
+    storeContent,
+    getAllContentIds, 
+    getPublicContent, 
+    viewContent 
+  };
 }; 

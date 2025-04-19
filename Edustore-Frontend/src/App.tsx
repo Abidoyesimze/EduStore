@@ -1,5 +1,5 @@
 // src/App.tsx
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './component/Navbar';
 import HomePage from './component/HomePage';
 import Footer from './component/Footer';
@@ -30,6 +30,7 @@ import {
   QueryClientProvider,
   QueryClient,
 } from '@tanstack/react-query';
+import './App.css';
 
 // Configure Wagmi
 const config = getDefaultConfig({

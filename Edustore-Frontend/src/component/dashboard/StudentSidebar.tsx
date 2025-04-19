@@ -1,19 +1,18 @@
-// src/components/dashboard/Sidebar.tsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-interface SidebarProps {
+interface StudentSidebarProps {
   activePage?: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activePage = 'home' }) => {
+const StudentSidebar: React.FC<StudentSidebarProps> = ({ activePage = 'home' }) => {
   const location = useLocation();
 
   const menuItems = [
-    { id: 'home', icon: '🏠', text: 'Home', path: '/educator-dashboard' },
-    { id: 'upload', icon: '⬆️', text: 'Upload File', path: '/upload' },
-    { id: 'files', icon: '📄', text: 'My Files', path: '/files' },
-    { id: 'access', icon: '🔒', text: 'Access Control', path: '/access' },
+    { id: 'home', icon: '🏠', text: 'Home', path: '/student-dashboard' },
+    { id: 'resources', icon: '📚', text: 'My Resources', path: '/resources' },
+    { id: 'notifications', icon: '🔔', text: 'Notifications', path: '/notifications' },
+    { id: 'explore', icon: '🔍', text: 'Explore', path: '/explore' },
     { id: 'settings', icon: '⚙️', text: 'Settings', path: '/settings' }
   ];
 
@@ -27,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage = 'home' }) => {
                 to={item.path} 
                 className={`flex items-center p-3 my-1 rounded-md transition-colors ${
                   location.pathname === item.path || 
-                  (location.pathname === '/educator-dashboard' && item.id === 'home')
+                  (location.pathname === '/student-dashboard' && item.id === 'home')
                     ? 'bg-gray-100 text-green-600' 
                     : 'hover:bg-gray-50 text-gray-600'
                 }`}
@@ -43,4 +42,4 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage = 'home' }) => {
   );
 };
 
-export default Sidebar;
+export default StudentSidebar; 

@@ -5,30 +5,18 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { EduCoreContract, EduStoreContract } from '..';
 import { getAddress } from 'ethers';
-import { useFilecoinStorage, StoragePlan } from '../useFileStorage';
+import { useFilecoinStorage } from '../useFileStorage';
 
-// TypeScript interfaces
-interface FileMetadata {
-  title: string;
-  type: string;
-  size: string;
-  uploadDate: string;
-  access: 'public' | 'students';
-  fileCID: string;
-  tags: string[];
-}
+type UploadStep = 'idle' | 'uploading' | 'core-tx' | 'storage-tx' | 'error' | 'complete';
 
 const UploadFile: React.FC = () => {
   const { address } = useAccount();
   const lighthouseApiKey = import.meta.env.VITE_LIGHTHOUSE_API_KEY;
   const pinataApiKey = import.meta.env.VITE_PINATA_API_KEY;
-const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY; 
-
-
-  
+  const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
 
   const {
-    uploadWithProgress,
+    uploadToFilecoin,
     defaultStoragePlans,
     getStorageProviders,
     isUploading,
@@ -64,14 +52,14 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
   const [uploadError, setUploadError] = useState('');
 
   // Storage plan state
-  const [storagePlans, setStoragePlans] = useState<StoragePlan[]>(defaultStoragePlans);
-  const [selectedPlan, setSelectedPlan] = useState<StoragePlan | null>(null);
+  const [storagePlans] = useState(defaultStoragePlans);
+  const [selectedPlan, setSelectedPlan] = useState<string>('basic');
   const [storageProvider, setStorageProvider] = useState('');
   const [storageProviders, setStorageProviders] = useState<{ address: string; name: string }[]>([]);
   const [showDealConfirmation, setShowDealConfirmation] = useState(false);
 
   // Transaction state
-  const [uploadStep, setUploadStep] = useState<'idle' | 'uploading' | 'core-tx' | 'storage-tx' | 'complete' | 'error'>('idle');
+  const [uploadStep, setUploadStep] = useState<UploadStep>('idle');
   const [contentCID, setContentCID] = useState<string | null>(null);
   const [coreTransactionTimeout, setCoreTransactionTimeout] = useState<NodeJS.Timeout | null>(null);
   const [storageTransactionTimeout, setStorageTransactionTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -143,7 +131,7 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
       try {
         const providers = await getStorageProviders();
         setStorageProviders(providers);
-        if (!selectedPlan && storagePlans.length > 0) setSelectedPlan(storagePlans[0]);
+        if (!selectedPlan && storagePlans.length > 0) setSelectedPlan(storagePlans[0].id);
         if (!storageProvider && providers.length > 0) setStorageProvider(providers[0].address);
       } catch (error) {
         console.error('Error initializing providers:', error);
@@ -341,7 +329,7 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
 
       while (uploadAttempts < maxUploadAttempts && !contentId) {
         try {
-          contentId = await uploadWithProgress(selectedFile, processToastId);
+          contentId = await uploadToFilecoin(selectedFile, processToastId);
           console.log('File uploaded with CID:', contentId);
           break;
         } catch (error: any) {
@@ -415,7 +403,7 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
       setTags('');
       setSelectedFile(null);
       setAccessType('public');
-      setSelectedPlan(null);
+      setSelectedPlan('basic');
     } catch (error: any) {
       console.error('Error during upload process:', error);
       const errorMessage = error.message || 'Unknown error occurred';
@@ -497,7 +485,7 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
         isLoading: true,
       });
 
-      await createStorageDealOnChain(contentCID, storageProvider, selectedPlan.days, selectedPlan.price);
+      await createStorageDealOnChain(contentCID, storageProvider, storagePlans.find(p => p.id === selectedPlan)?.days || 180, storagePlans.find(p => p.id === selectedPlan)?.price || '0');
     } catch (error: any) {
       console.error('Error creating storage deal:', error);
       toast.error(`Failed to create storage deal: ${error.message || 'Unknown error'}. File is pinned via Pinata.`);
@@ -695,19 +683,19 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
                         <label className="block text-sm font-medium text-gray-700 mb-1">Storage Plan</label>
                         <select
                           className="w-full p-2 border border-gray-300 rounded-md"
-                          value={selectedPlan ? storagePlans.findIndex((p) => p.name === selectedPlan.name) : 0}
-                          onChange={(e) => setSelectedPlan(storagePlans[parseInt(e.target.value)])}
+                          value={selectedPlan}
+                          onChange={(e) => setSelectedPlan(e.target.value)}
                         >
-                          {storagePlans.map((plan, index) => (
-                            <option key={plan.name} value={index}>
-                              {plan.name} - {plan.days} days ({plan.price} ETH)
+                          {storagePlans.map((plan) => (
+                            <option key={plan.id} value={plan.id}>
+                              {plan.name} - {plan.days} days ({plan.price})
                             </option>
                           ))}
                         </select>
                       </div>
                     </div>
                     <div className="bg-blue-50 p-3 rounded text-sm mb-4">
-                      {selectedPlan?.description} - {selectedPlan?.dealParams.numOfCopies} copies on the Filecoin network.
+                      {storagePlans.find(p => p.id === selectedPlan)?.features.join(', ')}
                     </div>
                     <div className="flex justify-end gap-3">
                       <button
@@ -734,7 +722,7 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
                       >
                         {isPendingStorage || isConfirmingStorage || isTransactionInProgress
                           ? 'Processing...'
-                          : `Create Storage Deal (${selectedPlan?.price} ETH)`}
+                          : `Create Storage Deal (${storagePlans.find(p => p.id === selectedPlan)?.price || 'Free'})`}
                       </button>
                     </div>
                   </div>
@@ -804,20 +792,19 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       {storagePlans.map((plan) => (
                         <div
-                          key={plan.name}
+                          key={plan.id}
                           className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                            selectedPlan?.name === plan.name ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-green-300'
+                            selectedPlan === plan.id ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-green-300'
                           }`}
-                          onClick={() => setSelectedPlan(plan)}
+                          onClick={() => setSelectedPlan(plan.id)}
                         >
                           <div className="flex justify-between items-center mb-2">
                             <h4 className="font-medium">{plan.name}</h4>
-                            <span className="text-sm bg-blue-100 px-2 py-1 rounded-full">{plan.price} ETH</span>
+                            <span className="text-sm bg-blue-100 px-2 py-1 rounded-full">{plan.price}</span>
                           </div>
-                          <p className="text-xs text-gray-600 mb-2">{plan.description}</p>
+                          <p className="text-xs text-gray-600 mb-2">{plan.features.join(', ')}</p>
                           <div className="flex justify-between text-sm">
                             <span>{plan.days} days</span>
-                            <span>{plan.dealParams.numOfCopies} copies</span>
                           </div>
                         </div>
                       ))}
@@ -934,22 +921,22 @@ const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
                         </p>
                         <p className="flex justify-between mt-1">
                           <span className="text-gray-500">Storage Plan:</span>
-                          <span className="font-medium">{selectedPlan?.name || 'Standard'}</span>
+                          <span className="font-medium">{storagePlans.find(p => p.id === selectedPlan)?.name || 'Standard'}</span>
                         </p>
                       </div>
                       <div>
                         <p className="flex justify-between">
                           <span className="text-gray-500">Duration:</span>
-                          <span className="font-medium">{selectedPlan?.days || 180} days</span>
+                          <span className="font-medium">{storagePlans.find(p => p.id === selectedPlan)?.days || 180} days</span>
                         </p>
                         <p className="flex justify-between mt-1">
-                          <span className="text-gray-500">Copies:</span>
-                          <span className="font-medium">{selectedPlan?.dealParams.numOfCopies || 2}</span>
+                          <span className="text-gray-500">Features:</span>
+                          <span className="font-medium">{storagePlans.find(p => p.id === selectedPlan)?.features.join(', ')}</span>
                         </p>
                         <p className="flex justify-between mt-1">
                           <span className="text-gray-500">Expiry Date:</span>
                           <span className="font-medium">
-                            {new Date(Date.now() + (selectedPlan?.days || 180) * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                            {new Date(Date.now() + (storagePlans.find(p => p.id === selectedPlan)?.days || 180) * 24 * 60 * 60 * 1000).toLocaleDateString()}
                           </span>
                         </p>
                       </div>

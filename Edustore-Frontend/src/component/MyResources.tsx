@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import Sidebar from './dashboard/Sidebar';
-import { useNavigate } from 'react-router-dom';
-import { ethers } from 'ethers';
+import { useState, useEffect } from 'react';
+import StudentSidebar from './dashboard/StudentSidebar';
 import { BrowserProvider, JsonRpcProvider, Contract } from 'ethers';
 import { EduCoreContract, EduAccessControlContract } from './index';
 import lighthouse from '@lighthouse-web3/sdk';
 import { useEduStoreContracts } from './Service';
+
+interface LighthouseFileInfo {
+  contentType?: string;
+  fileSize?: number;
+  fileName?: string;
+}
 
 // Simple ABI for just the getContentDetails and isContentPublic functions
 const MINIMAL_ABI = [
@@ -55,11 +59,10 @@ const LearnerDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const navigate = useNavigate();
+  const [userAddress, setUserAddress] = useState<string>('');
+  const [ensName, setEnsName] = useState<string>('');
   const lighthouseApiKey = import.meta.env.VITE_LIGHTHOUSE_API_KEY;
-  const pinataApiKey = import.meta.env.VITE_PINATA_API_KEY;
-  const pinataApiSecret = import.meta.env.VITE_PINATA_SECRET_KEY;
-  const { getContentDetails, checkAccess, viewContent } = useEduStoreContracts();
+  const { viewContent } = useEduStoreContracts();
 
   // Use the imported contract addresses
   const CORE_CONTRACT_ADDRESS = EduCoreContract.address;
@@ -71,9 +74,9 @@ const LearnerDashboard = () => {
     setError(null);
 
     try {
-      let provider;
+      let provider: BrowserProvider | JsonRpcProvider | undefined;
       let signer;
-      let userAddress;
+      let userAddress: string | undefined;
 
       // Try to get provider from browser wallet
       if (window.ethereum) {
@@ -119,16 +122,16 @@ const LearnerDashboard = () => {
 
           if (isPublic || hasAccess) {
             // Get file info from Lighthouse
-            const fileInfo = await lighthouse.getFileInfo(contentId);
+            const fileInfo = await lighthouse.getFileInfo(contentId) as LighthouseFileInfo;
             
             // Get file type from content type
             let fileType = 'unknown';
-            if (fileInfo.mimeType) {
-              if (fileInfo.mimeType.includes('image')) fileType = 'image';
-              else if (fileInfo.mimeType.includes('pdf')) fileType = 'pdf';
-              else if (fileInfo.mimeType.includes('text')) fileType = 'text';
-              else if (fileInfo.mimeType.includes('video')) fileType = 'video';
-              else if (fileInfo.mimeType.includes('audio')) fileType = 'audio';
+            if (fileInfo.contentType) {
+              if (fileInfo.contentType.includes('image')) fileType = 'image';
+              else if (fileInfo.contentType.includes('pdf')) fileType = 'pdf';
+              else if (fileInfo.contentType.includes('text')) fileType = 'text';
+              else if (fileInfo.contentType.includes('video')) fileType = 'video';
+              else if (fileInfo.contentType.includes('audio')) fileType = 'audio';
             }
 
             // Generate access URL with API key
@@ -138,13 +141,13 @@ const LearnerDashboard = () => {
               id: contentId,
               title: contentDetails.title,
               type: fileType,
-              size: formatFileSize(fileInfo.size),
+              size: formatFileSize(fileInfo.fileSize || 0),
               uploadDate: new Date(contentDetails.timestamp * 1000).toLocaleDateString(),
               owner: contentDetails.owner,
               description: contentDetails.description,
               tags: contentDetails.tags,
               icon: getFileIcon(fileType),
-              originalName: fileInfo.name,
+              originalName: fileInfo.fileName || contentId,
               contentUrl: contentUrl,
               isPublic: isPublic
             } as Content;
@@ -249,7 +252,7 @@ const LearnerDashboard = () => {
     <div className="bg-white min-h-screen">
       <div className="max-w-7xl mx-auto p-4">
         <div className="flex flex-col md:flex-row gap-6">
-          <Sidebar activePage="learn" />
+          <StudentSidebar activePage="resources" />
           <div className="flex-1">
             <div className="bg-gray-50 p-6 rounded-lg">
               <div className="flex items-center justify-between mb-8">

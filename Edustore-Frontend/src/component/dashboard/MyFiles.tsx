@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import Sidebar from './Sidebar';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ethers } from 'ethers';
 import { BrowserProvider, JsonRpcProvider, Contract } from 'ethers';
 import { EduCoreContract } from '../index';
 import lighthouse from '@lighthouse-web3/sdk';
+import StudentSidebar from './StudentSidebar';
 
 // Simple ABI for just the getMyContent function
 const MINIMAL_ABI = [
@@ -49,6 +48,7 @@ const MyFiles = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activePage, setActivePage] = useState('files');
   const navigate = useNavigate();
   const lighthouseApiKey = import.meta.env.VITE_LIGHTHOUSE_API_KEY;
 
@@ -301,7 +301,7 @@ const MyFiles = () => {
     <div className="bg-white min-h-screen">
       <div className="max-w-7xl mx-auto p-4">
         <div className="flex flex-col md:flex-row gap-6">
-          <Sidebar activePage="files" />
+          <StudentSidebar activePage="files" />
           <div className="flex-1">
             <div className="bg-gray-50 p-6 rounded-lg">
               <div className="flex items-center justify-between mb-8">
