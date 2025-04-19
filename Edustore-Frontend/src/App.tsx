@@ -12,6 +12,7 @@ import UploadFile from './component/dashboard/UploadFile';
 import MyFiles from './component/dashboard/MyFiles';
 import AccessControl from './component/dashboard/AccessControl';
 import Dashboard from './component/Dashboard';
+import MyResources from './component/MyResources';
 import {
   getDefaultConfig,
   RainbowKitProvider,
@@ -33,7 +34,7 @@ import {
 // Configure Wagmi
 const config = getDefaultConfig({
   appName: 'Edustore',
-  projectId: 'YOUR_PROJECT_ID',
+  projectId: 'a69043ecf4dca5c34a5e70fdfeac4558',
   chains: [mainnet, polygon, optimism, arbitrum, base, filecoinCalibration],
   ssr: true,
 });
@@ -73,6 +74,7 @@ function App() {
               <Route path="/files" element={<MyFiles />} />
               <Route path="/access" element={<AccessControl />} />
               <Route path='/student-dashboard' element={<Dashboard/>} />
+              <Route path='/resources' element={<MyResources />} />
           </Routes>
           </main>
           <Footer />
