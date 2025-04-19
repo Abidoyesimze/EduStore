@@ -1,10 +1,10 @@
 // src/components/Dashboard.tsx
 import React from 'react';
-import { Link } from 'react-router-dom';
+//import { Link } from 'react-router-dom';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { FaHome, FaFolder, FaBell, FaCog, FaSearch } from 'react-icons/fa';
-import logo from '../assets/logo.png';
+//import logo from '../assets/logo.png';
 import Vector8 from '../assets/Vector (8).png';
 import Vector9 from '../assets/Vector (9).png';
 import Vector10 from '../assets/Vector (10).png';
@@ -65,12 +65,6 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen flex  flex-row bg-gray-100 font-sans">
       {/* Sidebar */}
       <aside className="bg-white flex flex-col items-center py-6 w-16 lg:w-60 transition-all duration-300">
-  {/* Logo */}
-  {/* <div className="flex items-center mb-10 w-full justify-center lg:justify-start">
-  <Link to="/" className="flex items-center">
-    <img src={logo} alt="EduStore Logo" className="h-8 w-auto" />
-  </Link>
-  </div> */}
 
 
   {/* Navigation */}

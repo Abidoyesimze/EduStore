@@ -2,7 +2,10 @@
 import { useState } from 'react';
 import lighthouse from '@lighthouse-web3/sdk';
 import { toast } from 'react-toastify';
-import { utils } from 'ethers';
+//import { utils } from 'ethers';
+//import { parseUnits } from "ethers";
+//import * as ethersUtils from "ethers/lib/utils";
+
 
 export interface IUploadProgressCallback {
   total: number;
