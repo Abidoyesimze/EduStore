@@ -11,6 +11,7 @@ import Vector11 from '../assets/Vector (11).png';
 import Vector12 from '../assets/Vector (12).png';
 import Vector13 from '../assets/Vector (13).png';
 import Ellipse1 from '../assets/Ellipse 4 (1).png';
+import StudentSidebar from './dashboard/StudentSidebar';
 
 const user1 = Vector13;
 const user2 = Ellipse1;
@@ -115,45 +116,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex flex-row bg-gray-100 font-sans">
-      {/* Sidebar */}
-      <aside className="bg-white flex flex-col items-center py-6 w-16 lg:w-60 transition-all duration-300">
-        {/* Navigation */}
-        <nav className="flex flex-col space-y-6 w-full items-center">
-          {[
-            { icon: FaHome, label: 'Home' },
-            { icon: FaFolder, label: 'My Resources' },
-            { icon: FaBell, label: 'Notifications' },
-            { icon: FaSearch, label: 'Explore' },
-          ].map(({ icon: Icon, label }) => (
-            <button
-              key={label}
-              onClick={() => handleNavigation(label)}
-              className="text-[#B7A400] hover:text-yellow-600 group flex items-center w-10/12 relative"
-            >
-              <Icon size={22} className="mx-auto lg:mx-0" />
-              <span className="absolute left-14 bg-gray-700 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 lg:hidden whitespace-nowrap">
-                {label}
-              </span>
-              <p className="hidden lg:block ml-4">{label}</p>
-            </button>
-          ))}
-        </nav>
-
-        {/* Settings Button */}
-        <div className="mt-auto w-10/12">
-          <button
-            onClick={() => handleNavigation('Settings')}
-            className="text-[#B7A400] hover:text-yellow-700 group flex items-center relative"
-          >
-            <FaCog size={22} className="mx-auto lg:mx-0" />
-            <span className="absolute left-14 bg-gray-700 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 lg:hidden whitespace-nowrap">
-              Settings
-            </span>
-            <p className="hidden lg:block ml-4">Settings</p>
-          </button>
-        </div>
-      </aside>
-
+      <StudentSidebar activePage="home" />
+      
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         <header className="bg-white text-black p-4 flex items-center justify-between">

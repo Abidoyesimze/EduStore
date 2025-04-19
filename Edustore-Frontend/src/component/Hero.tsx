@@ -8,7 +8,7 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-[#F8FAF5]">
+    <div className="bg-[#F8FAF5] w-full">
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import StudentSidebar from './dashboard/StudentSidebar';
-import { BrowserProvider, JsonRpcProvider, Contract } from 'ethers';
+import { BrowserProvider, JsonRpcProvider, Contract, Signer } from 'ethers';
 import { EduCoreContract, EduAccessControlContract } from './index';
 import lighthouse from '@lighthouse-web3/sdk';
 import { useEduStoreContracts } from './Service';
+// import { getAddress } from 'ethers';
 
 interface LighthouseFileInfo {
   contentType?: string;
@@ -11,29 +12,29 @@ interface LighthouseFileInfo {
   fileName?: string;
 }
 
-// Simple ABI for just the getContentDetails and isContentPublic functions
+// Simple ABI for just the required functions
 const MINIMAL_ABI = [
+  {
+    inputs: [],
+    name: 'getAllContentIds',
+    outputs: [{ internalType: 'string[]', name: '', type: 'string[]' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
   {
     inputs: [{ internalType: 'string', name: '_contentId', type: 'string' }],
     name: 'getContentDetails',
     outputs: [
-      { internalType: 'string', name: 'contentId', type: 'string' },
-      { internalType: 'address', name: 'owner', type: 'address' },
-      { internalType: 'uint256', name: 'timestamp', type: 'uint256' },
       { internalType: 'string', name: 'title', type: 'string' },
+      { internalType: 'address', name: 'owner', type: 'address' },
       { internalType: 'bool', name: 'isPublic', type: 'bool' },
       { internalType: 'string', name: 'description', type: 'string' },
-      { internalType: 'string[]', name: 'tags', type: 'string[]' }
+      { internalType: 'string[]', name: 'tags', type: 'string[]' },
+      { internalType: 'uint256', name: 'viewCount', type: 'uint256' },
+      { internalType: 'uint256', name: 'timestamp', type: 'uint256' }
     ],
     stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [{ internalType: 'string', name: '_contentId', type: 'string' }],
-    name: 'isContentPublic',
-    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
-    stateMutability: 'view',
-    type: 'function',
+    type: 'function'
   }
 ];
 
@@ -59,8 +60,6 @@ const LearnerDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userAddress, setUserAddress] = useState<string>('');
-  const [ensName, setEnsName] = useState<string>('');
   const lighthouseApiKey = import.meta.env.VITE_LIGHTHOUSE_API_KEY;
   const { viewContent } = useEduStoreContracts();
 
@@ -74,85 +73,68 @@ const LearnerDashboard = () => {
     setError(null);
 
     try {
-      let provider: BrowserProvider | JsonRpcProvider | undefined;
-      let signer;
-      let userAddress: string | undefined;
+      const provider = new JsonRpcProvider('https://api.calibration.node.glif.io/rpc/v1');
+      console.log('Provider connected:', provider);
+      
+      const coreContract = new Contract(CORE_CONTRACT_ADDRESS, MINIMAL_ABI, provider);
+      console.log('Contract instance created:', CORE_CONTRACT_ADDRESS);
 
-      // Try to get provider from browser wallet
-      if (window.ethereum) {
-        console.log('Found window.ethereum, attempting to connect...');
-        provider = new BrowserProvider(window.ethereum);
-        try {
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
-          signer = await provider.getSigner();
-          userAddress = await signer.getAddress();
-          console.log('Connected wallet address:', userAddress);
-        } catch (walletErr) {
-          console.warn('Could not get signer from wallet:', walletErr);
-        }
+      // Get all content IDs
+      const allContentIds = await coreContract.getAllContentIds();
+      console.log('All content IDs:', allContentIds);
+
+      if (!allContentIds || allContentIds.length === 0) {
+        console.log('No content IDs found');
+        setContents([]);
+        return;
       }
-
-      // Fallback to public RPC
-      if (!provider) {
-        console.log('No wallet provider found, using public RPC...');
-        provider = new JsonRpcProvider('https://api.calibration.node.glif.io/rpc/v1');
-      }
-
-      // Create contract instances
-      const coreContract = new Contract(CORE_CONTRACT_ADDRESS, MINIMAL_ABI, signer || provider);
-      const accessControlContract = new Contract(ACCESS_CONTROL_ADDRESS, MINIMAL_ABI, signer || provider);
-
-      // Get all content IDs (this would need to be implemented in the contract)
-      // For now, we'll use a mock list of content IDs
-      const contentIds = [
-        'QmZ9...',
-        'QmX8...',
-        'QmY7...'
-      ];
 
       // Process each content ID
-      const contentPromises = contentIds.map(async (contentId) => {
+      const contentPromises = allContentIds.map(async (contentId: string) => {
         try {
-          // Get content details
-          const contentDetails = await coreContract.getContentDetails(contentId);
+          console.log('Processing content ID:', contentId);
           
-          // Check if content is public or user has access
-          const isPublic = await coreContract.isContentPublic(contentId);
-          const hasAccess = userAddress ? await accessControlContract.hasAccess(contentId, userAddress) : false;
+          // Get content details from contract
+          const contentDetails = await coreContract.getContentDetails(contentId);
+          console.log('Content details:', contentDetails);
 
-          if (isPublic || hasAccess) {
-            // Get file info from Lighthouse
-            const fileInfo = await lighthouse.getFileInfo(contentId) as LighthouseFileInfo;
-            
-            // Get file type from content type
-            let fileType = 'unknown';
-            if (fileInfo.contentType) {
-              if (fileInfo.contentType.includes('image')) fileType = 'image';
-              else if (fileInfo.contentType.includes('pdf')) fileType = 'pdf';
-              else if (fileInfo.contentType.includes('text')) fileType = 'text';
-              else if (fileInfo.contentType.includes('video')) fileType = 'video';
-              else if (fileInfo.contentType.includes('audio')) fileType = 'audio';
-            }
-
-            // Generate access URL with API key
-            const contentUrl = `https://gateway.lighthouse.storage/ipfs/${contentId}?api-key=${lighthouseApiKey}`;
-
-            return {
-              id: contentId,
-              title: contentDetails.title,
-              type: fileType,
-              size: formatFileSize(fileInfo.fileSize || 0),
-              uploadDate: new Date(contentDetails.timestamp * 1000).toLocaleDateString(),
-              owner: contentDetails.owner,
-              description: contentDetails.description,
-              tags: contentDetails.tags,
-              icon: getFileIcon(fileType),
-              originalName: fileInfo.fileName || contentId,
-              contentUrl: contentUrl,
-              isPublic: isPublic
-            } as Content;
+          // Skip if not public
+          if (!contentDetails.isPublic) {
+            console.log('Content is not public, skipping:', contentId);
+            return null;
           }
-          return null;
+
+          // Get file info from Lighthouse
+          const fileInfo = await lighthouse.getFileInfo(contentId) as LighthouseFileInfo;
+          console.log('Lighthouse file info:', fileInfo);
+          
+          // Get file type from content type
+          let fileType = 'unknown';
+          if (fileInfo.contentType) {
+            if (fileInfo.contentType.includes('image')) fileType = 'image';
+            else if (fileInfo.contentType.includes('pdf')) fileType = 'pdf';
+            else if (fileInfo.contentType.includes('text')) fileType = 'text';
+            else if (fileInfo.contentType.includes('video')) fileType = 'video';
+            else if (fileInfo.contentType.includes('audio')) fileType = 'audio';
+          }
+
+          // Generate access URL with API key
+          const contentUrl = `https://gateway.lighthouse.storage/ipfs/${contentId}?api-key=${lighthouseApiKey}`;
+
+          return {
+            id: contentId,
+            title: contentDetails.title || 'Untitled',
+            type: fileType,
+            size: formatFileSize(fileInfo.fileSize || 0),
+            uploadDate: new Date(Number(contentDetails.timestamp) * 1000).toLocaleDateString(),
+            owner: contentDetails.owner,
+            description: contentDetails.description || 'No description available',
+            tags: contentDetails.tags || [],
+            icon: getFileIcon(fileType),
+            originalName: fileInfo.fileName || contentId,
+            contentUrl: contentUrl,
+            isPublic: true
+          } as Content;
         } catch (err) {
           console.error(`Error processing content ${contentId}:`, err);
           return null;
@@ -160,8 +142,11 @@ const LearnerDashboard = () => {
       });
 
       const contentsData = await Promise.all(contentPromises);
-      setContents(contentsData.filter(content => content !== null) as Content[]);
+      const validContents = contentsData.filter(content => content !== null) as Content[];
+      console.log('Processed contents:', validContents);
+      setContents(validContents);
     } catch (err: any) {
+      console.error('Error fetching public content:', err);
       setError(`Failed to load content: ${err.message}`);
     } finally {
       setIsLoading(false);

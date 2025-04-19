@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { BrowserProvider, JsonRpcProvider, Contract } from 'ethers';
 import { EduCoreContract } from '../index';
 import lighthouse from '@lighthouse-web3/sdk';
+import { useEduStoreContracts } from '../Service';
+// import { useFilecoinStorage } from '../useFileStorage';
 import StudentSidebar from './StudentSidebar';
 
 // Simple ABI for just the getMyContent function
@@ -48,7 +50,7 @@ const MyFiles = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activePage, setActivePage] = useState('files');
+  // const [activePage, setActivePage] = useState('files');
   const navigate = useNavigate();
   const lighthouseApiKey = import.meta.env.VITE_LIGHTHOUSE_API_KEY;
 
@@ -294,6 +296,36 @@ const MyFiles = () => {
     } catch (err) {
       console.error('Error downloading file:', err);
       alert('Failed to download file. Please try again.');
+    }
+  };
+
+  // Update the handleViewContent function to use signer.address instead of userAddress
+  const handleViewContent = async (contentId: string) => {
+    try {
+      const { getContentDetails, checkAccess } = useEduStoreContracts();
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
+
+      // Check if user has access to the content
+      const hasAccess = await checkAccess(contentId, userAddress);
+      if (!hasAccess) {
+        alert('You do not have access to this content');
+        return;
+      }
+
+      // Get content details
+      const contentDetails = await getContentDetails(contentId);
+      if (!contentDetails) {
+        alert('Content not found');
+        return;
+      }
+
+      // Navigate to content view page
+      navigate(`/content/${contentId}`);
+    } catch (error) {
+      console.error('Error viewing content:', error);
+      alert('Error viewing content');
     }
   };
 

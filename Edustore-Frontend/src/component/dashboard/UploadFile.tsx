@@ -7,6 +7,14 @@ import { EduCoreContract, EduStoreContract } from '..';
 import { getAddress } from 'ethers';
 import { useFilecoinStorage } from '../useFileStorage';
 
+interface StoragePlan {
+  id: string;
+  name: string;
+  price: string;
+  days: number;
+  features: string[];
+}
+
 type UploadStep = 'idle' | 'uploading' | 'core-tx' | 'storage-tx' | 'error' | 'complete';
 
 const UploadFile: React.FC = () => {
@@ -17,7 +25,7 @@ const UploadFile: React.FC = () => {
 
   const {
     uploadToFilecoin,
-    defaultStoragePlans,
+    storagePlans,
     getStorageProviders,
     isUploading,
     uploadProgress,
@@ -52,7 +60,6 @@ const UploadFile: React.FC = () => {
   const [uploadError, setUploadError] = useState('');
 
   // Storage plan state
-  const [storagePlans] = useState(defaultStoragePlans);
   const [selectedPlan, setSelectedPlan] = useState<string>('basic');
   const [storageProvider, setStorageProvider] = useState('');
   const [storageProviders, setStorageProviders] = useState<{ address: string; name: string }[]>([]);
@@ -305,7 +312,7 @@ const UploadFile: React.FC = () => {
       return;
     }
 
-      const processToastId = 'file-process-toast';
+    const processToastId = 'file-process-toast';
     try {
       console.log('Starting upload process...');
       toast.info('Preparing file upload to Filecoin...', {
@@ -329,7 +336,9 @@ const UploadFile: React.FC = () => {
 
       while (uploadAttempts < maxUploadAttempts && !contentId) {
         try {
-          contentId = await uploadToFilecoin(selectedFile, processToastId);
+          contentId = await uploadToFilecoin(selectedFile, (progress) => {
+            uploadProgress = progress;
+          });
           console.log('File uploaded with CID:', contentId);
           break;
         } catch (error: any) {
@@ -485,7 +494,7 @@ const UploadFile: React.FC = () => {
         isLoading: true,
       });
 
-      await createStorageDealOnChain(contentCID, storageProvider, storagePlans.find(p => p.id === selectedPlan)?.days || 180, storagePlans.find(p => p.id === selectedPlan)?.price || '0');
+      await createStorageDealOnChain(contentCID, storageProvider, storagePlans.find((p: StoragePlan) => p.id === selectedPlan)?.days || 180, storagePlans.find((p: StoragePlan) => p.id === selectedPlan)?.price || '0');
     } catch (error: any) {
       console.error('Error creating storage deal:', error);
       toast.error(`Failed to create storage deal: ${error.message || 'Unknown error'}. File is pinned via Pinata.`);
@@ -686,7 +695,7 @@ const UploadFile: React.FC = () => {
                           value={selectedPlan}
                           onChange={(e) => setSelectedPlan(e.target.value)}
                         >
-                          {storagePlans.map((plan) => (
+                          {storagePlans.map((plan: StoragePlan) => (
                             <option key={plan.id} value={plan.id}>
                               {plan.name} - {plan.days} days ({plan.price})
                             </option>
@@ -695,7 +704,7 @@ const UploadFile: React.FC = () => {
                       </div>
                     </div>
                     <div className="bg-blue-50 p-3 rounded text-sm mb-4">
-                      {storagePlans.find(p => p.id === selectedPlan)?.features.join(', ')}
+                      {storagePlans.find((p: StoragePlan) => p.id === selectedPlan)?.features.join(', ')}
                     </div>
                     <div className="flex justify-end gap-3">
                       <button
@@ -722,7 +731,7 @@ const UploadFile: React.FC = () => {
                       >
                         {isPendingStorage || isConfirmingStorage || isTransactionInProgress
                           ? 'Processing...'
-                          : `Create Storage Deal (${storagePlans.find(p => p.id === selectedPlan)?.price || 'Free'})`}
+                          : `Create Storage Deal (${storagePlans.find((p: StoragePlan) => p.id === selectedPlan)?.price || 'Free'})`}
                       </button>
                     </div>
                   </div>
@@ -790,7 +799,7 @@ const UploadFile: React.FC = () => {
                   <div className="mb-8">
                     <h3 className="text-md font-medium mb-3">Select Storage Plan</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {storagePlans.map((plan) => (
+                      {storagePlans.map((plan: StoragePlan) => (
                         <div
                           key={plan.id}
                           className={`border rounded-lg p-4 cursor-pointer transition-all ${
@@ -921,22 +930,22 @@ const UploadFile: React.FC = () => {
                         </p>
                         <p className="flex justify-between mt-1">
                           <span className="text-gray-500">Storage Plan:</span>
-                          <span className="font-medium">{storagePlans.find(p => p.id === selectedPlan)?.name || 'Standard'}</span>
+                          <span className="font-medium">{storagePlans.find((p: StoragePlan) => p.id === selectedPlan)?.name || 'Standard'}</span>
                         </p>
                       </div>
                       <div>
                         <p className="flex justify-between">
                           <span className="text-gray-500">Duration:</span>
-                          <span className="font-medium">{storagePlans.find(p => p.id === selectedPlan)?.days || 180} days</span>
+                          <span className="font-medium">{storagePlans.find((p: StoragePlan) => p.id === selectedPlan)?.days || 180} days</span>
                         </p>
                         <p className="flex justify-between mt-1">
                           <span className="text-gray-500">Features:</span>
-                          <span className="font-medium">{storagePlans.find(p => p.id === selectedPlan)?.features.join(', ')}</span>
+                          <span className="font-medium">{storagePlans.find((p: StoragePlan) => p.id === selectedPlan)?.features.join(', ')}</span>
                         </p>
                         <p className="flex justify-between mt-1">
                           <span className="text-gray-500">Expiry Date:</span>
                           <span className="font-medium">
-                            {new Date(Date.now() + (storagePlans.find(p => p.id === selectedPlan)?.days || 180) * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                            {new Date(Date.now() + (storagePlans.find((p: StoragePlan) => p.id === selectedPlan)?.days || 180) * 24 * 60 * 60 * 1000).toLocaleDateString()}
                           </span>
                         </p>
                       </div>

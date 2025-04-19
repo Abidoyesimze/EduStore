@@ -63,15 +63,16 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
         <Router>
-          <div className="min-h-screen flex flex-col">
+          <div className="min-h-screen w-full flex flex-col">
           <Navbar />
-          <main className="flex-grow">
+          <main className="flex-grow w-full">
           <Routes>
              <Route path="/" element={<HomePage />} />
              <Route path='/features' element={<Features />} />
              <Route path="/roles" element={<RoleSelectionPage />} />
               <Route path="/Educator-dashboard" element={<EducatorDashboard />} />
               <Route path="/upload" element={<UploadFile />} />
+              <Route path="/dashboard/upload" element={<UploadFile />} />
               <Route path="/files" element={<MyFiles />} />
               <Route path="/access" element={<AccessControl />} />
               <Route path='/student-dashboard' element={<Dashboard/>} />
