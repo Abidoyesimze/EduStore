@@ -2,10 +2,7 @@
 import { useState } from 'react';
 import lighthouse from '@lighthouse-web3/sdk';
 import { toast } from 'react-toastify';
-//import { utils } from 'ethers';
-//import { parseUnits } from "ethers";
-//import * as ethersUtils from "ethers/lib/utils";
-
+import { getAddress } from 'ethers';
 
 export interface IUploadProgressCallback {
   total: number;
@@ -245,60 +242,71 @@ export const useFilecoinStorage = (apiKey: string) => {
 
   const uploadWithProgress = async (file: File, toastId?: string): Promise<string> => {
     setIsUploading(true);
+    setUploadError(null);
     setUploadProgress(0);
-    
+
     try {
-      console.log('Starting upload with progress monitoring...');
-      
-      // Use XMLHttpRequest for better progress monitoring
+      const formData = new FormData();
+      formData.append('file', file);
+
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        const formData = new FormData();
-        formData.append('file', file);
-        
+
         // Track upload progress
         xhr.upload.addEventListener('progress', (event) => {
           if (event.lengthComputable) {
-            const percentComplete = (event.loaded / event.total) * 100;
-            setUploadProgress(percentComplete);
-            console.log(`Upload progress: ${percentComplete.toFixed(2)}%`);
-            
-            if (toastId && toast.isActive(toastId)) {
+            const progress = (event.loaded / event.total) * 100;
+            setUploadProgress(progress);
+            if (toastId) {
               toast.update(toastId, {
-                render: `Uploading to Filecoin... ${percentComplete.toFixed(1)}%`,
+                render: `Uploading file... ${progress.toFixed(2)}%`,
+                type: 'info',
+                autoClose: false,
+                isLoading: true,
               });
             }
           }
         });
-        
-        // Handle completion
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
+
+        // Handle upload completion
+        xhr.addEventListener('load', async () => {
+          if (xhr.status === 200) {
             try {
               const response = JSON.parse(xhr.responseText);
-              if (response.Hash) {
-                console.log('Upload successful, CID:', response.Hash);
-                resolve(`ipfs://${response.Hash}`);
-              } else {
-                reject(new Error('No Hash in response'));
+              const cid = response.Hash;
+              
+              // Pin the file after upload
+              const pinResponse = await fetch('https://node.lighthouse.storage/api/v0/pin/add', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  cid: cid
+                })
+              });
+
+              if (!pinResponse.ok) {
+                throw new Error('Failed to pin file');
               }
+
+              console.log('File uploaded and pinned successfully:', cid);
+              resolve(cid);
             } catch (error) {
-              reject(new Error(`Failed to parse response: ${xhr.responseText}`));
+              console.error('Error processing upload response:', error);
+              reject(error);
             }
           } else {
-            reject(new Error(`HTTP error: ${xhr.status}`));
+            reject(new Error(`Upload failed with status ${xhr.status}`));
           }
         });
-        
+
         // Handle errors
         xhr.addEventListener('error', () => {
-          reject(new Error('Network error occurred'));
+          reject(new Error('Network error during upload'));
         });
-        
-        xhr.addEventListener('abort', () => {
-          reject(new Error('Upload aborted'));
-        });
-        
+
         // Set timeout
         xhr.timeout = 60000; // 1 minute
         xhr.addEventListener('timeout', () => {
@@ -317,6 +325,7 @@ export const useFilecoinStorage = (apiKey: string) => {
       setIsUploading(false);
     }
   };
+  
   // Function to get metadata about a file stored on Filecoin
   const getFilecoinMetadata = async (cid: string) => {
     try {
@@ -334,17 +343,17 @@ export const useFilecoinStorage = (apiKey: string) => {
   };
   
   // Get storage providers in the Filecoin network
-  // Get storage providers in the Filecoin network
   const getStorageProviders = async () => {
+    // Using ethers.js to ensure addresses are properly checksummed
     return [
-      {
-        address: utils.getAddress(import.meta.env.VITE_PROVIDER_1_ADDRESS),
-        name: "EduStore Provider 1",
+      { 
+        address: getAddress("0x71C7656EC7ab88b098defB751B7401B5f6d8976F"), 
+        name: "EduStore Provider 1" 
       },
-      {
-        address: utils.getAddress(import.meta.env.VITE_PROVIDER_2_ADDRESS),
-        name: "EduStore Provider 2",
-      },
+      { 
+        address: getAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"), 
+        name: "EduStore Provider 2" 
+      }
     ];
   };
 
@@ -360,4 +369,3 @@ export const useFilecoinStorage = (apiKey: string) => {
     uploadError
   };
 };
-
