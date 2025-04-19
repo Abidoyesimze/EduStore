@@ -1,9 +1,9 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import { FaHome, FaFolder, FaBell, FaCog, FaSearch } from 'react-icons/fa';
-import logo from '../assets/logo.png';
+import { BrowserProvider } from 'ethers';
 import Vector8 from '../assets/Vector (8).png';
 import Vector9 from '../assets/Vector (9).png';
 import Vector10 from '../assets/Vector (10).png';
@@ -11,7 +11,7 @@ import Vector11 from '../assets/Vector (11).png';
 import Vector12 from '../assets/Vector (12).png';
 import Vector13 from '../assets/Vector (13).png';
 import Ellipse1 from '../assets/Ellipse 4 (1).png';
-import { useNavigate } from 'react-router-dom';
+import StudentSidebar from './dashboard/StudentSidebar';
 
 const user1 = Vector13;
 const user2 = Ellipse1;
@@ -52,8 +52,41 @@ const metrics = {
   completionPercentage: 23,
 };
 
-const Dashboard: React.FC = () => {
+const Dashboard = () => {
+  const [userAddress, setUserAddress] = useState<string>('');
+  const [ensName, setEnsName] = useState<string>('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        if (window.ethereum) {
+          const provider = new BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          const address = await signer.getAddress();
+          setUserAddress(address);
+
+          try {
+            const ensName = await provider.lookupAddress(address);
+            if (ensName) {
+              setEnsName(ensName);
+            }
+          } catch (ensError) {
+            console.log('Could not resolve ENS name:', ensError);
+          }
+        }
+      } catch (error) {
+        console.error('Error getting user info:', error);
+      }
+    };
+
+    getUserInfo();
+  }, []);
+
+  const formatAddress = (address: string | null) => {
+    if (!address) return 'Guest';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   const handleNavigation = (section: string) => {
     switch (section) {
@@ -82,76 +115,28 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex  flex-row bg-gray-100 font-sans">
-      {/* Sidebar */}
-      <aside className="bg-white flex flex-col items-center py-6 w-16 lg:w-60 transition-all duration-300">
-  {/* Logo */}
-  {/* <div className="flex items-center mb-10 w-full justify-center lg:justify-start">
-  <Link to="/" className="flex items-center">
-    <img src={logo} alt="EduStore Logo" className="h-8 w-auto" />
-  </Link>
-  </div> */}
-
-
-  {/* Navigation */}
-  <nav className="flex flex-col space-y-6 w-full items-center">
-    {[
-      { icon: FaHome, label: 'Home' },
-      { icon: FaFolder, label: 'My Resources' },
-      { icon: FaBell, label: 'Notifications' },
-      { icon: FaSearch, label: 'Explore' },
-    ].map(({ icon: Icon, label }) => (
-      <button
-        key={label}
-        onClick={() => handleNavigation(label)}
-        className="white-[#B7A400] hover:text-yellow-600 group flex items-center w-10/12 relative"
-      >
-        <Icon size={22} className="mx-auto lg:mx-0" />
-        <span className="absolute left-14 bg-gray-700 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 lg:hidden whitespace-nowrap">
-          {label}
-        </span>
-        <p className="hidden lg:block ml-4">{label}</p>
-      </button>
-    ))}
-  </nav>
-
-  {/* Settings Button */}
-  <div className="mt-auto w-10/12">
-    <button
-      onClick={() => handleNavigation('Settings')}
-      className="text-[#B7A400] hover:text-yellow-700 group flex items-center relative"
-    >
-      <FaCog size={22} className="mx-auto lg:mx-0" />
-      <span className="absolute left-14 bg-gray-700 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 lg:hidden whitespace-nowrap">
-        Settings
-      </span>
-      <p className="hidden lg:block ml-4">Settings</p>
-        </button>
-      </div>
-    </aside>
-
-
+    <div className="min-h-screen flex flex-row bg-gray-100 font-sans">
+      <StudentSidebar activePage="home" />
+      
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-      <header className="bg-white text-black p-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-800">
-          Welcome Godwin 👋
-        </h1>
-        <div className="flex items-center gap-4 md:gap-6">
-          <button className="flex items-center gap-2">
-        <img className="w-5 h-5" src={Vector8} alt="Access" />
-        <span className="text-sm md:text-base cursor-pointer">Access Requests</span>
-          </button>
-          <button className="flex items-center gap-2">
-        <img className="w-5 h-5" src={Vector9} alt="Downloads" />
-        <span className="text-sm md:text-base cursor-pointer">My Downloads</span>
-          </button>
-        </div>
-      </header>
+        <header className="bg-white text-black p-4 flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-gray-800">
+            Welcome {ensName ? ensName : userAddress ? formatAddress(userAddress) : 'Guest'} 👋
+          </h1>
+          <div className="flex items-center gap-4 md:gap-6">
+            <button className="flex items-center gap-2">
+              <img className="w-5 h-5" src={Vector8} alt="Access" />
+              <span className="text-sm md:text-base cursor-pointer">Access Requests</span>
+            </button>
+            <button className="flex items-center gap-2">
+              <img className="w-5 h-5" src={Vector9} alt="Downloads" />
+              <span className="text-sm md:text-base cursor-pointer">My Downloads</span>
+            </button>
+          </div>
+        </header>
 
-      <main className="p-4 sm:p-6 space-y-6">
-        
-
+        <main className="p-4 sm:p-6 space-y-6">
           {/* Metrics */}
           <section>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

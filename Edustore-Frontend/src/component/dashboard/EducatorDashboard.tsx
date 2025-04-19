@@ -1,11 +1,40 @@
 // src/components/dashboard/EducatorDashboard.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import StatCards from './StatCards';
 import NotificationList from './NotificationList';
+import { BrowserProvider } from 'ethers';
 
 const EducatorDashboard: React.FC = () => {
-  const username = "Ola";
+  const [userAddress, setUserAddress] = useState<string>('');
+  const [ensName, setEnsName] = useState<string>('');
+  
+  useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        if (window.ethereum) {
+          const provider = new BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          const address = await signer.getAddress();
+          setUserAddress(address);
+
+          // Try to resolve ENS name
+          try {
+            const ensName = await provider.lookupAddress(address);
+            if (ensName) {
+              setEnsName(ensName);
+            }
+          } catch (ensError) {
+            console.log('Could not resolve ENS name:', ensError);
+          }
+        }
+      } catch (error) {
+        console.error('Error getting user info:', error);
+      }
+    };
+
+    getUserInfo();
+  }, []);
   
   return (
     <div className="bg-white min-h-screen">
@@ -20,14 +49,15 @@ const EducatorDashboard: React.FC = () => {
         
         <div className="flex flex-col md:flex-row gap-6">
           {/* Sidebar */}
-          <Sidebar />
+          <Sidebar activePage="home" />
           
           {/* Main Content */}
           <div className="flex-1">
             <div className="bg-gray-50 p-6 rounded-lg">
               <div className="flex items-center mb-8">
-                <h1 className="text-xl font-medium">Welcome {username} </h1>
-                <span className="ml-2 text-2xl">👋</span>
+                <h1 className="text-xl font-medium">
+                  Welcome {ensName ? ensName : userAddress ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : 'Guest'} 👋
+                </h1>
               </div>
               
               {/* Stats Cards */}
